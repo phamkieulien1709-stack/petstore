@@ -265,39 +265,47 @@ window.doLogout=()=>{
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
 /* ============================= APP DATA ============================= */
-const BRANCHES=['Quận 1','Quận 7'];
 const TODAY='2026-07-05';
 
 const state = {
+  branches:[
+    {id:1,name:'Quận 1',address:'12 Nguyễn Trãi, Phường Bến Thành, TP.HCM'},
+    {id:2,name:'Quận 7',address:'88 Nguyễn Thị Thập, Phường Tân Phú, TP.HCM'},
+  ],
   staff:[
-    {id:1,name:'Nguyễn Thị Thảo',position:'Groomer',branch:'Quận 1',baseSalary:8000000,commission:2500000,phone:'0909 111 222',username:'thao'},
-    {id:2,name:'Đặng Văn Minh',position:'Groomer',branch:'Quận 7',baseSalary:7500000,commission:1800000,phone:'0909 222 333',username:'minh'},
-    {id:3,name:'Vũ Thị Hà',position:'Hotel & Spa',branch:'Quận 1',baseSalary:7000000,commission:1200000,phone:'0909 333 444',username:''},
-    {id:4,name:'Lâm Bảo Ngọc',position:'Bán hàng',branch:'Quận 7',baseSalary:6800000,commission:900000,phone:'0909 444 555',username:''},
+    {id:1,name:'Nguyễn Thị Thảo',position:'Groomer',branch:'Quận 1',baseSalary:8000000,phone:'0909 111 222',username:'thao'},
+    {id:2,name:'Đặng Văn Minh',position:'Groomer',branch:'Quận 7',baseSalary:7500000,phone:'0909 222 333',username:'minh'},
+    {id:3,name:'Vũ Thị Hà',position:'Hotel & Spa',branch:'Quận 1',baseSalary:7000000,phone:'0909 333 444',username:''},
+    {id:4,name:'Lâm Bảo Ngọc',position:'Bán hàng',branch:'Quận 7',baseSalary:6800000,phone:'0909 444 555',username:''},
   ],
   services:[
-    {id:1,name:'Tắm cơ bản',price:150000,used:132},
-    {id:2,name:'Tắm + Cắt tỉa',price:280000,used:98},
-    {id:3,name:'Khách sạn / ngày',price:300000,used:210},
-    {id:4,name:'Cắt móng + vệ sinh tai',price:80000,used:150},
+    {id:1,name:'Tắm cơ bản',price:150000,used:132,commissionRate:10,staffRates:{}},
+    {id:2,name:'Tắm + Cắt tỉa',price:280000,used:98,commissionRate:10,staffRates:{}},
+    {id:3,name:'Khách sạn / ngày',price:300000,used:210,commissionRate:8,staffRates:{}},
+    {id:4,name:'Cắt móng + vệ sinh tai',price:80000,used:150,commissionRate:10,staffRates:{}},
   ],
   orders:[
-    {id:1,service:'Tắm + Cắt tỉa',price:280000,branch:'Quận 1',customer:'Nguyễn Thị Lan Anh',date:'2026-07-05',status:'Hoàn thành',staff:'Nguyễn Thị Thảo'},
-    {id:2,service:'Khách sạn / ngày',price:300000,branch:'Quận 7',customer:'Lê Hoài Thương',date:'2026-07-04',status:'Đang xử lý',staff:'Vũ Thị Hà'},
-    {id:3,service:'Tắm cơ bản',price:150000,branch:'Quận 1',customer:'Phạm Minh Châu',date:'2026-06-28',status:'Hoàn thành',staff:'Nguyễn Thị Thảo'},
-    {id:4,service:'Cắt móng + vệ sinh tai',price:80000,branch:'Quận 7',customer:'Trần Văn Hùng',date:'2026-06-20',status:'Hoàn thành',staff:'Đặng Văn Minh'},
-    {id:5,service:'Tắm + Cắt tỉa',price:280000,branch:'Quận 1',customer:'Lê Hoài Thương',date:'2026-06-15',status:'Đã huỷ',staff:''},
+    {id:1,service:'Tắm + Cắt tỉa',price:280000,branch:'Quận 1',customer:'Nguyễn Thị Lan Anh',date:'2026-07-05',status:'Hoàn thành',staff:'Nguyễn Thị Thảo',type:'dichvu',refName:'Tắm + Cắt tỉa',originalPrice:280000,discountAmount:0,discountPercent:0},
+    {id:2,service:'Khách sạn / ngày',price:300000,branch:'Quận 7',customer:'Lê Hoài Thương',date:'2026-07-04',status:'Đang xử lý',staff:'Vũ Thị Hà',type:'dichvu',refName:'Khách sạn / ngày',originalPrice:300000,discountAmount:0,discountPercent:0},
+    {id:3,service:'Tắm cơ bản',price:150000,branch:'Quận 1',customer:'Phạm Minh Châu',date:'2026-06-28',status:'Hoàn thành',staff:'Nguyễn Thị Thảo',type:'dichvu',refName:'Tắm cơ bản',originalPrice:150000,discountAmount:0,discountPercent:0},
+    {id:4,service:'Cắt móng + vệ sinh tai',price:80000,branch:'Quận 7',customer:'Trần Văn Hùng',date:'2026-06-20',status:'Hoàn thành',staff:'Đặng Văn Minh',type:'dichvu',refName:'Cắt móng + vệ sinh tai',originalPrice:80000,discountAmount:0,discountPercent:0},
+    {id:5,service:'Tắm + Cắt tỉa',price:280000,branch:'Quận 1',customer:'Lê Hoài Thương',date:'2026-06-15',status:'Đã huỷ',staff:'',type:'dichvu',refName:'Tắm + Cắt tỉa',originalPrice:280000,discountAmount:0,discountPercent:0},
+    {id:6,service:'[Hàng hóa] Hạt Royal Canin 1.5kg x1',price:320000,branch:'Quận 1',customer:'Nguyễn Thị Lan Anh',date:'2026-06-30',status:'Hoàn thành',staff:'Lâm Bảo Ngọc',type:'hangban',refName:'Hạt Royal Canin 1.5kg',originalPrice:320000,discountAmount:0,discountPercent:0},
   ],
   retail:[
-    {id:1,category:'Thức ăn',name:'Hạt Royal Canin 1.5kg',price:320000,image:''},
-    {id:2,category:'Phụ kiện',name:'Vòng cổ chống ve',price:85000,image:''},
-    {id:3,category:'Đồ chơi',name:'Bóng cao su gặm',price:45000,image:''},
-    {id:4,category:'Thức ăn',name:'Pate gà Ciao',price:95000,image:''},
+    {id:1,warehouseId:4,sellPrice:320000,commissionRate:5,staffRates:{}},
+    {id:2,warehouseId:5,sellPrice:85000,commissionRate:5,staffRates:{}},
+    {id:3,warehouseId:6,sellPrice:45000,commissionRate:5,staffRates:{}},
+    {id:4,warehouseId:7,sellPrice:95000,commissionRate:5,staffRates:{}},
   ],
   warehouse:[
     {id:1,category:'Nguyên liệu spa',name:'Sữa tắm chuyên dụng',costPrice:95000,stock:20,image:''},
     {id:2,category:'Thức ăn',name:'Pate Ciao (lốc 4)',costPrice:70000,stock:6,image:''},
     {id:3,category:'Vệ sinh',name:'Cát vệ sinh mèo 5kg',costPrice:88000,stock:3,image:''},
+    {id:4,category:'Thức ăn',name:'Hạt Royal Canin 1.5kg',costPrice:260000,stock:14,image:''},
+    {id:5,category:'Phụ kiện',name:'Vòng cổ chống ve',costPrice:55000,stock:9,image:''},
+    {id:6,category:'Đồ chơi',name:'Bóng cao su gặm',costPrice:25000,stock:30,image:''},
+    {id:7,category:'Thức ăn',name:'Pate gà Ciao',costPrice:60000,stock:22,image:''},
   ],
   customers:[
     {id:1,name:'Nguyễn Thị Lan Anh',phone:'0901 234 567',address:'12 Nguyễn Trãi, Q.1',email:'lananh@gmail.com',tier:'Gold',points:180,
@@ -338,7 +346,10 @@ const state = {
 const NAV_ALL=[
  {id:'phucvukh', label:'Phục vụ khách hàng',icon:'🙋'},
  {id:'kinhdoanh',label:'Quản lý kinh doanh',icon:'💰',adminOnly:true},
+ {id:'chiphi',   label:'Quản lý chi phí',icon:'💸',adminOnly:true},
+ {id:'coso',     label:'Quản lý cơ sở',icon:'🏢',adminOnly:true},
  {id:'nhanvien', label:'Quản lý nhân viên',icon:'👥',adminOnly:true},
+ {id:'taikhoan', label:'Quản lý tài khoản',icon:'🔑',adminOnly:true},
  {id:'luongtoi', label:'Lương của tôi',icon:'💵',staffOnly:true},
  {id:'donhang',  label:'Quản lý đơn hàng',icon:'🧾',adminOnly:true},
  {id:'dichvu',   label:'Quản lý dịch vụ',icon:'✂️',adminOnly:true},
@@ -351,7 +362,10 @@ const NAV_ALL=[
 const TITLES={
  phucvukh:['Phục vụ khách hàng','Tiếp nhận khách mới, tạo đơn & bắt đầu dịch vụ'],
  kinhdoanh:['Quản lý kinh doanh','Doanh thu, chi phí, lợi nhuận theo cơ sở'],
+ chiphi:['Quản lý chi phí','Nhập chi phí theo tháng tại từng cơ sở'],
+ coso:['Quản lý cơ sở','Danh sách cơ sở và địa chỉ'],
  nhanvien:['Quản lý nhân viên','Lương cứng, hoa hồng & tài khoản đăng nhập'],
+ taikhoan:['Quản lý tài khoản','Đổi tên đăng nhập & mật khẩu cho admin và nhân viên'],
  luongtoi:['Lương của tôi','Lương cứng, hoa hồng & dịch vụ đã thực hiện'],
  donhang:['Quản lý đơn hàng','Danh sách đơn hàng theo dịch vụ và cơ sở'],
  dichvu:['Quản lý dịch vụ','Bảng giá dịch vụ & số lượt sử dụng'],
@@ -390,6 +404,12 @@ function goTo(id){
 const vnd = n => (n||0).toLocaleString('vi-VN')+'đ';
 const petById = id => state.pets.find(p=>p.id===id);
 const ownerById = id => state.customers.find(c=>c.id===id);
+const warehouseById = id => state.warehouse.find(w=>w.id===id);
+function branchNames(){return state.branches.map(b=>b.name);}
+function retailView(r){
+  const w=warehouseById(r.warehouseId)||{category:'—',name:'(Đã xoá khỏi kho)',costPrice:0,stock:0,image:''};
+  return {retailId:r.id, warehouseId:r.warehouseId, category:w.category, name:w.name, image:w.image, costPrice:w.costPrice, stock:w.stock, sellPrice:r.sellPrice};
+}
 function toast(msg){
   const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(window.__tt); window.__tt=setTimeout(()=>t.classList.remove('show'),2400);
@@ -402,21 +422,24 @@ function readImage(input,cb){
   const r=new FileReader(); r.onload=()=>cb(r.result); r.readAsDataURL(f);
 }
 
-/* ---- Hoa hồng: mỗi khâu có tỷ trọng riêng trên 10% giá dịch vụ — Cắt (kỹ thuật cao) hưởng nhiều hơn Tắm/Chờ ---- */
-const COMMISSION_RATE = 0.10;
-const STAGE_WEIGHTS = {'Chờ':0.10,'Tắm':0.30,'Cắt':0.45,'Hoàn thiện':0.15};
-function jobServicePrice(j){
-  if(j.orderId){const o=state.orders.find(x=>x.id===j.orderId); if(o) return o.price;}
-  const sv=state.services.find(s=>s.name===j.service); return sv?sv.price:0;
+/* ---- Hoa hồng: mỗi Dịch vụ / Hàng bán có % hoa hồng riêng, có thể override theo từng nhân viên ---- */
+const staffByName = name => state.staff.find(s=>s.name===name);
+function serviceByRefName(name){ return state.services.find(s=>s.name===name); }
+function retailByRefName(name){ return state.retail.find(r=>retailView(r).name===name); }
+function rateForStaff(item,staffId){
+  if(!item) return 0;
+  if(staffId!=null && item.staffRates && item.staffRates[staffId]!=null) return item.staffRates[staffId];
+  return item.commissionRate||0;
+}
+function orderCommission(o){
+  if(!o.staff || o.status==='Đã huỷ') return 0;
+  const s=staffByName(o.staff); const staffId=s?s.id:null;
+  if(o.type==='dichvu'){ const sv=serviceByRefName(o.refName); return Math.round(o.price*rateForStaff(sv,staffId)/100); }
+  if(o.type==='hangban'){ const r=retailByRefName(o.refName); return Math.round(o.price*rateForStaff(r,staffId)/100); }
+  return 0;
 }
 function jobParticipants(j){
   return [...new Set(Object.values(j.staff).filter(Boolean))];
-}
-function jobStageCommission(j,stage){
-  return Math.round(jobServicePrice(j)*COMMISSION_RATE*STAGE_WEIGHTS[stage]);
-}
-function jobStaffCommission(j,staffName){
-  return SPASTAGES.reduce((sum,st)=> sum + (j.staff[st]===staffName ? jobStageCommission(j,st) : 0), 0);
 }
 
 /* ============================= RENDER ============================= */
@@ -432,7 +455,7 @@ RENDER.phucvukh = () => {
   const ordered = [...waiting, ...mine, ...others];
   return `
   <div class="toolbar">
-    <div class="small muted">Ca chưa có ai phụ trách ở khâu hiện tại hiển thị đầu tiên — bấm "Nhận việc" để nhận. Có thể "Nhả việc" bất cứ lúc nào để người khác nhận lại. Hoa hồng tính riêng theo từng khâu: Chờ ${STAGE_WEIGHTS['Chờ']*100}% · Tắm ${STAGE_WEIGHTS['Tắm']*100}% · Cắt ${STAGE_WEIGHTS['Cắt']*100}% · Hoàn thiện ${STAGE_WEIGHTS['Hoàn thiện']*100}% (trên ${COMMISSION_RATE*100}% giá dịch vụ).</div>
+    <div class="small muted">Ca chưa có ai phụ trách ở khâu hiện tại hiển thị đầu tiên — bấm "Nhận việc" để nhận. Có thể "Nhả việc" bất cứ lúc nào để người khác nhận lại. Hoa hồng được tính theo % quy định riêng cho từng dịch vụ / hàng bán, ghi nhận cho nhân viên tiếp nhận đơn.</div>
     <button class="btn primary" onclick="openAddOrderWizard()">+ Thêm mới</button>
   </div>
   <div id="queueList">
@@ -463,7 +486,7 @@ function queueCard(j){
         const name=j.staff[s];
         const mine2=name===currentUser.name;
         return `<div class="chip" style="background:${name?(mine2?'var(--accent-soft)':'var(--teal-soft)'):'#F0F3EB'};${s===j.status?'border:1.5px solid var(--ink-soft);':''}">
-          <b>${s}</b>: ${name?name:'<span class="muted">chưa nhận</span>'} ${name?'· '+vnd(jobStageCommission(j,s)):''}
+          <b>${s}</b>: ${name?name:'<span class="muted">chưa nhận</span>'}
         </div>`;
       }).join('')}
     </div>
@@ -504,7 +527,7 @@ window.releaseSpaJob=(id)=>{
 };
 
 function buildIntakeFormHtml(){
-  const myBranch = (state.staff.find(s=>s.id===currentUser.staffId)||{}).branch || BRANCHES[0];
+  const myBranch = (state.staff.find(s=>s.id===currentUser.staffId)||{}).branch || branchNames()[0];
   return `<button class="modal-close" onclick="closeModal()">✕</button>
   <h3>🙋 Thêm đơn phục vụ mới</h3>
 
@@ -540,15 +563,22 @@ function buildIntakeFormHtml(){
   <div class="divider"></div>
   <b>Dịch vụ & hàng hóa</b>
   <label class="f" style="margin-top:10px;">Dịch vụ chính</label>
-  <select id="wiz_service" style="width:100%">${state.services.map(s=>`<option value="${s.id}">${s.name} — ${vnd(s.price)}</option>`).join('')}</select>
+  <select id="wiz_service" style="width:100%" onchange="onWizServiceChange()">${state.services.map(s=>`<option value="${s.id}">${s.name} — ${vnd(s.price)}</option>`).join('')}</select>
   <label class="f" style="margin-top:10px;">Cơ sở áp dụng</label>
-  <select id="wiz_branch" style="width:100%">${BRANCHES.map(b=>`<option ${b===myBranch?'selected':''}>${b}</option>`).join('')}</select>
+  <select id="wiz_branch" style="width:100%">${branchNames().map(b=>`<option ${b===myBranch?'selected':''}>${b}</option>`).join('')}</select>
+
+  <div class="formgrid" style="margin-top:10px;">
+    <div class="field"><label class="f">Chiết khấu (%)</label><input type="number" id="wiz_disc_percent" value="0" min="0" max="100" style="width:100%" oninput="discPercentChange(this)"></div>
+    <div class="field"><label class="f">Chiết khấu (số tiền)</label><input type="number" id="wiz_disc_amount" value="0" min="0" style="width:100%" oninput="discAmountChange(this)"></div>
+  </div>
+  <div class="small muted" id="wiz_price_preview" style="margin-top:6px;"></div>
+
   <label class="f" style="margin-top:10px;">Hàng hóa mua kèm (nếu có)</label>
   <div style="max-height:130px;overflow-y:auto;">
-    ${state.retail.map(p=>`<div class="flex between center" style="padding:5px 0;">
-      <span class="small">${p.name} <span class="muted">(${vnd(p.price)})</span></span>
-      <input type="number" min="0" value="0" id="goods_qty_${p.id}" style="width:56px;text-align:center;">
-    </div>`).join('')}
+    ${state.retail.map(r=>{const rv=retailView(r); return `<div class="flex between center" style="padding:5px 0;">
+      <span class="small">${rv.name} <span class="muted">(${vnd(rv.sellPrice)} · tồn ${rv.stock})</span></span>
+      <input type="number" min="0" max="${rv.stock}" value="0" id="goods_qty_${r.id}" style="width:56px;text-align:center;">
+    </div>`;}).join('')}
   </div>
 
   <div class="divider"></div>
@@ -560,10 +590,41 @@ function buildIntakeFormHtml(){
 
   <div style="margin-top:18px;text-align:right;"><button class="btn primary" onclick="submitPhucVu()">🚀 Bắt đầu phục vụ</button></div>`;
 }
+function currentWizPrice(){
+  const svc=state.services.find(s=>s.id===+document.getElementById('wiz_service').value);
+  return svc?svc.price:0;
+}
+window.onWizServiceChange=()=>{
+  const pct=+document.getElementById('wiz_disc_percent').value||0;
+  const amt=Math.round(currentWizPrice()*pct/100);
+  document.getElementById('wiz_disc_amount').value=amt;
+  updateWizPricePreview();
+};
+window.discPercentChange=(el)=>{
+  const price=currentWizPrice();
+  const pct=Math.min(100,Math.max(0,+el.value||0));
+  const amt=Math.round(price*pct/100);
+  document.getElementById('wiz_disc_amount').value=amt;
+  updateWizPricePreview();
+};
+window.discAmountChange=(el)=>{
+  const price=currentWizPrice();
+  const amt=Math.max(0,+el.value||0);
+  const pct = price? +(Math.min(amt,price)/price*100).toFixed(1) : 0;
+  document.getElementById('wiz_disc_percent').value=pct;
+  updateWizPricePreview();
+};
+function updateWizPricePreview(){
+  const price=currentWizPrice();
+  const amt=+document.getElementById('wiz_disc_amount').value||0;
+  const final=Math.max(0,price-amt);
+  document.getElementById('wiz_price_preview').innerHTML=`Giá dịch vụ: <b>${vnd(price)}</b> → Sau chiết khấu: <b>${vnd(final)}</b>`;
+}
 window.openAddOrderWizard=()=>{
   wizPhoto='';
   openModal(buildIntakeFormHtml());
   populatePetSelect();
+  updateWizPricePreview();
 };
 window.toggleCustMode=(mode)=>{
   document.getElementById('custExistingWrap').classList.toggle('hidden',mode==='new');
@@ -617,24 +678,31 @@ window.submitPhucVu=()=>{
   }
   const svc=state.services.find(s=>s.id===+document.getElementById('wiz_service').value);
   const branch=document.getElementById('wiz_branch').value;
+  const discPercent=+document.getElementById('wiz_disc_percent').value||0;
+  const discAmount=Math.min(svc.price,+document.getElementById('wiz_disc_amount').value||0);
+  const finalPrice=Math.max(0,svc.price-discAmount);
 
   if(!wizPhoto){
     if(!confirm('Chưa có ảnh trước khi thực hiện dịch vụ. Vẫn tiếp tục?')) return;
   }
 
-  // Hàng hóa mua kèm -> tạo đơn riêng cho mỗi mặt hàng có số lượng > 0
-  state.retail.forEach(p=>{
-    const qtyEl=document.getElementById('goods_qty_'+p.id);
+  // Hàng hóa mua kèm -> tạo đơn riêng cho mỗi mặt hàng có số lượng > 0, đồng thời trừ tồn kho tương ứng
+  state.retail.forEach(r=>{
+    const qtyEl=document.getElementById('goods_qty_'+r.id);
     const qty=qtyEl?+qtyEl.value:0;
     if(qty>0){
+      const rv=retailView(r);
       const oid=Math.max(...state.orders.map(o=>o.id))+1;
-      state.orders.push({id:oid,service:'[Hàng hóa] '+p.name+' x'+qty,price:p.price*qty,branch,customer:custName,date:TODAY,status:'Hoàn thành',staff:currentUser.name});
+      state.orders.push({id:oid,service:'[Hàng hóa] '+rv.name+' x'+qty,price:rv.sellPrice*qty,branch,customer:custName,date:TODAY,status:'Hoàn thành',staff:currentUser.name,
+        type:'hangban',refName:rv.name,originalPrice:rv.sellPrice*qty,discountAmount:0,discountPercent:0});
+      const w=warehouseById(r.warehouseId); if(w) w.stock=Math.max(0,w.stock-qty);
     }
   });
 
-  // Đơn dịch vụ chính
+  // Đơn dịch vụ chính (đã áp chiết khấu nếu có)
   const orderId=Math.max(...state.orders.map(o=>o.id))+1;
-  state.orders.push({id:orderId,service:svc.name,price:svc.price,branch,customer:custName,date:TODAY,status:'Đang xử lý',staff:currentUser.name});
+  state.orders.push({id:orderId,service:svc.name,price:finalPrice,branch,customer:custName,date:TODAY,status:'Đang xử lý',staff:currentUser.name,
+    type:'dichvu',refName:svc.name,originalPrice:svc.price,discountAmount:discAmount,discountPercent:discPercent});
   svc.used++;
 
   // Ca Spa mới, khâu "Chờ" gán cho người tiếp nhận
@@ -666,33 +734,32 @@ RENDER.luongtoi = () => {
 function luongToiBody(my){
   const from=document.getElementById('lt_from')?document.getElementById('lt_from').value:'2026-06-01';
   const to=document.getElementById('lt_to')?document.getElementById('lt_to').value:'2026-07-05';
-  const myJobs=state.spaJobs.filter(j=>j.completedDate && j.completedDate>=from && j.completedDate<=to && jobParticipants(j).includes(my.name));
-  const totalCommission=myJobs.reduce((s,j)=>s+jobStaffCommission(j,my.name),0);
-  // Mỗi khâu mình đã làm trong mỗi ca -> 1 dòng riêng, để thấy rõ khâu nào trả bao nhiêu
-  const rows=[];
-  myJobs.forEach(j=>{
-    const p=petById(j.petId), o=ownerById(p.ownerId);
-    SPASTAGES.forEach(st=>{
-      if(j.staff[st]===my.name){
-        rows.push({date:j.completedDate,pet:p.name,cust:o.name,service:j.service,stage:st,amount:jobStageCommission(j,st)});
-      }
-    });
-  });
+  const myOrders=state.orders.filter(o=>o.staff===my.name && o.status!=='Đã huỷ' && o.date>=from && o.date<=to);
+  const svcRevenue=myOrders.filter(o=>o.type==='dichvu').reduce((s,o)=>s+o.price,0);
+  const goodsRevenue=myOrders.filter(o=>o.type==='hangban').reduce((s,o)=>s+o.price,0);
+  const totalCommission=myOrders.reduce((s,o)=>s+orderCommission(o),0);
   return `
   <div class="grid cols-3">
     ${kpiCard('💼','bg-teal',vnd(my.baseSalary),'Lương cứng (theo tháng)')}
     ${kpiCard('🎯','bg-pink',vnd(totalCommission),'Hoa hồng trong khoảng đã chọn')}
     ${kpiCard('💰','bg-blue',vnd(my.baseSalary+totalCommission),'Thu nhập ước tính')}
   </div>
-  <h2 class="h">✂️ Chi tiết hoa hồng theo từng khâu đã thực hiện</h2>
+  <div class="grid cols-2" style="margin-top:14px;">
+    ${kpiCard('✂️','bg-blue',vnd(svcRevenue),'Doanh số dịch vụ')}
+    ${kpiCard('🛍️','bg-marigold',vnd(goodsRevenue),'Doanh số hàng bán')}
+  </div>
+  <h2 class="h">📄 Chi tiết hoa hồng từng đơn</h2>
   <div class="tblwrap"><div class="scroller"><table>
-    <tr><th>Ngày hoàn thiện</th><th>Pet / Khách hàng</th><th>Dịch vụ</th><th>Khâu</th><th>Tỷ trọng</th><th>Hoa hồng nhận được</th></tr>
-    ${rows.length?rows.map(r=>`<tr><td class="mono">${r.date}</td><td>${r.pet} — ${r.cust}</td><td>${r.service}</td>
-      <td><span class="pill status-${r.stage==='Chờ'?'cho':r.stage==='Tắm'?'tam':r.stage==='Cắt'?'cat':'xong'}">${r.stage}</span></td>
-      <td class="mono">${STAGE_WEIGHTS[r.stage]*100}%</td>
-      <td class="mono">${vnd(r.amount)}</td></tr>`).join(''):'<tr><td colspan="6" class="muted small">Chưa có khâu nào hoàn thiện trong khoảng thời gian này.</td></tr>'}
+    <tr><th>Ngày</th><th>Dịch vụ / Hàng bán</th><th>Khách hàng</th><th>Loại</th><th>Giá</th><th>% Hoa hồng</th><th>Hoa hồng nhận được</th></tr>
+    ${myOrders.length?myOrders.map(o=>{
+      const item = o.type==='dichvu'?serviceByRefName(o.refName):retailByRefName(o.refName);
+      const rate = rateForStaff(item, my.id);
+      return `<tr><td class="mono">${o.date}</td><td>${o.service}</td><td>${o.customer}</td>
+        <td><span class="pill ${o.type==='dichvu'?'status-tam':'status-cat'}">${o.type==='dichvu'?'Dịch vụ':'Hàng bán'}</span></td>
+        <td class="mono">${vnd(o.price)}</td><td class="mono">${rate}%</td><td class="mono">${vnd(orderCommission(o))}</td></tr>`;
+    }).join(''):'<tr><td colspan="7" class="muted small">Chưa có đơn nào trong khoảng thời gian này.</td></tr>'}
   </table></div></div>
-  <div class="small muted" style="margin-top:10px;">* Hoa hồng = ${COMMISSION_RATE*100}% giá dịch vụ, chia theo tỷ trọng từng khâu (Chờ ${STAGE_WEIGHTS['Chờ']*100}% · Tắm ${STAGE_WEIGHTS['Tắm']*100}% · Cắt ${STAGE_WEIGHTS['Cắt']*100}% · Hoàn thiện ${STAGE_WEIGHTS['Hoàn thiện']*100}%) — ai làm khâu nào hưởng hoa hồng khâu đó, không chia đều nữa. Lương cứng hiển thị theo mức cố định hàng tháng, không tính theo khoảng ngày lọc.</div>
+  <div class="small muted" style="margin-top:10px;">* Hoa hồng = giá đơn hàng × % hoa hồng quy định tại Quản lý dịch vụ / Quản lý hàng bán (có thể khác nhau theo từng nhân viên). Lương cứng hiển thị theo mức cố định hàng tháng, không tính theo khoảng ngày lọc.</div>
   `;
 }
 
@@ -700,9 +767,13 @@ function luongToiBody(my){
 RENDER.kinhdoanh = () => {
   return `
   <div class="toolbar">
-    <div class="flex gap8 center">
+    <div class="flex gap8 center wrap">
       <label class="f" style="margin:0;">Từ</label><input type="date" id="kd_from" value="2026-06-01">
       <label class="f" style="margin:0;">Đến</label><input type="date" id="kd_to" value="2026-07-05">
+      <label class="f" style="margin:0;">Dịch vụ</label>
+      <select id="kd_service" style="min-width:160px;"><option value="all">Tất cả dịch vụ</option>${state.services.map(s=>`<option>${s.name}</option>`).join('')}</select>
+      <label class="f" style="margin:0;">Hàng bán</label>
+      <select id="kd_goods" style="min-width:160px;"><option value="all">Tất cả hàng bán</option>${state.retail.map(r=>`<option>${retailView(r).name}</option>`).join('')}</select>
       <button class="btn primary" onclick="renderSection('kinhdoanh')">Lọc</button>
     </div>
   </div>
@@ -712,16 +783,22 @@ RENDER.kinhdoanh = () => {
 function kinhdoanhBody(){
   const from=document.getElementById('kd_from')?document.getElementById('kd_from').value:'2026-06-01';
   const to=document.getElementById('kd_to')?document.getElementById('kd_to').value:'2026-07-05';
-  const orders=state.orders.filter(o=>o.date>=from && o.date<=to && o.status!=='Đã huỷ');
-  const revByBranch={};BRANCHES.forEach(b=>revByBranch[b]=0);
+  const svcFilter=document.getElementById('kd_service')?document.getElementById('kd_service').value:'all';
+  const goodsFilter=document.getElementById('kd_goods')?document.getElementById('kd_goods').value:'all';
+  let orders=state.orders.filter(o=>o.date>=from && o.date<=to && o.status!=='Đã huỷ');
+  if(svcFilter!=='all') orders=orders.filter(o=>o.type==='dichvu' && o.refName===svcFilter);
+  else if(goodsFilter!=='all') orders=orders.filter(o=>o.type==='hangban' && o.refName===goodsFilter);
+  const revByBranch={};branchNames().forEach(b=>revByBranch[b]=0);
   orders.forEach(o=>revByBranch[o.branch]=(revByBranch[o.branch]||0)+o.price);
   const totalRev=Object.values(revByBranch).reduce((a,b)=>a+b,0);
-  const expByBranch={};BRANCHES.forEach(b=>expByBranch[b]=0);
-  state.expenses.filter(e=>e.date>=from&&e.date<=to).forEach(e=>expByBranch[e.branch]=(expByBranch[e.branch]||0)+e.amount);
+  const expByBranch={};branchNames().forEach(b=>expByBranch[b]=0);
+  const filteringByItem = svcFilter!=='all' || goodsFilter!=='all';
+  if(!filteringByItem) state.expenses.filter(e=>e.date>=from&&e.date<=to).forEach(e=>expByBranch[e.branch]=(expByBranch[e.branch]||0)+e.amount);
   const totalExp=Object.values(expByBranch).reduce((a,b)=>a+b,0);
   const profit=totalRev-totalExp;
   const colors=['var(--accent)','var(--teal)'];
   return `
+  ${filteringByItem?`<div class="small muted" style="margin-bottom:10px;">🔎 Đang lọc theo ${svcFilter!=='all'?'dịch vụ "'+svcFilter+'"':'hàng bán "'+goodsFilter+'"'} — chi phí ẩn đi vì không gắn với một mặt hàng/dịch vụ cụ thể.</div>`:''}
   <div class="grid cols-3">
     ${kpiCard('💰','bg-teal',vnd(totalRev),'Tổng doanh thu (khoảng đã chọn)')}
     ${kpiCard('📉','bg-pink',vnd(totalExp),'Tổng chi phí (khoảng đã chọn)')}
@@ -729,25 +806,147 @@ function kinhdoanhBody(){
   </div>
   <div class="grid cols-2" style="margin-top:16px;">
     <div class="card"><b>Doanh thu theo cơ sở</b>
-      ${BRANCHES.map((b,i)=>`<div class="flex between" style="margin-top:10px;"><span>${b}</span><span class="mono">${vnd(revByBranch[b])}</span></div>`).join('')}
+      ${branchNames().map((b,i)=>`<div class="flex between" style="margin-top:10px;"><span>${b}</span><span class="mono">${vnd(revByBranch[b])}</span></div>`).join('')}
     </div>
     <div class="card"><b>Chi phí theo cơ sở</b>
-      ${BRANCHES.map((b,i)=>`<div class="flex between" style="margin-top:10px;"><span>${b}</span><span class="mono">${vnd(expByBranch[b])}</span></div>`).join('')}
+      ${branchNames().map((b,i)=>`<div class="flex between" style="margin-top:10px;"><span>${b}</span><span class="mono">${vnd(expByBranch[b])}</span></div>`).join('')}
     </div>
   </div>
   <h2 class="h">📄 Chi tiết chi phí</h2>
   <div class="tblwrap"><div class="scroller"><table>
     <tr><th>Loại chi phí</th><th>Cơ sở</th><th>Số tiền</th><th>Ngày</th></tr>
-    ${state.expenses.filter(e=>e.date>=from&&e.date<=to).map(e=>`<tr><td>${e.type}</td><td>${e.branch}</td><td class="mono">${vnd(e.amount)}</td><td class="mono">${e.date}</td></tr>`).join('')}
+    ${(filteringByItem?[]:state.expenses.filter(e=>e.date>=from&&e.date<=to)).map(e=>`<tr><td>${e.type}</td><td>${e.branch}</td><td class="mono">${vnd(e.amount)}</td><td class="mono">${e.date}</td></tr>`).join('') || '<tr><td colspan="4" class="muted small">Không có chi phí nào.</td></tr>'}
   </table></div></div>
   <h2 class="h">🧾 Đơn hàng trong khoảng thời gian</h2>
   <div class="tblwrap"><div class="scroller"><table>
-    <tr><th>Dịch vụ</th><th>Khách hàng</th><th>Cơ sở</th><th>Giá</th><th>Ngày</th><th>Trạng thái</th></tr>
-    ${orders.map(o=>`<tr><td>${o.service}</td><td>${o.customer}</td><td>${o.branch}</td><td class="mono">${vnd(o.price)}</td><td class="mono">${o.date}</td><td><span class="pill ok">${o.status}</span></td></tr>`).join('')}
+    <tr><th>Dịch vụ / Hàng bán</th><th>Khách hàng</th><th>Cơ sở</th><th>Giá</th><th>Ngày</th><th>Trạng thái</th></tr>
+    ${orders.map(o=>`<tr><td>${o.service}</td><td>${o.customer}</td><td>${o.branch}</td><td class="mono">${vnd(o.price)}</td><td class="mono">${o.date}</td><td><span class="pill ok">${o.status}</span></td></tr>`).join('') || '<tr><td colspan="6" class="muted small">Không có đơn nào phù hợp.</td></tr>'}
   </table></div></div>
   `;
 }
 function kpiCard(icon,bg,val,lbl){return `<div class="card kpi"><div class="icon ${bg}">${icon}</div><div class="val">${val}</div><div class="lbl">${lbl}</div></div>`;}
+
+/* ---- QUẢN LÝ CHI PHÍ (admin only) ---- */
+RENDER.chiphi = () => {
+  const sorted=[...state.expenses].sort((a,b)=>b.date.localeCompare(a.date));
+  return `
+  <div class="toolbar">
+    <div class="small muted">Chi phí nhập tại đây sẽ tự động hiển thị trong Quản lý kinh doanh theo cơ sở và khoảng thời gian tương ứng.</div>
+    <button class="btn primary" onclick="openAddExpense()">+ Thêm chi phí</button>
+  </div>
+  <div class="tblwrap"><div class="scroller"><table>
+    <tr><th>Tên chi phí</th><th>Cơ sở</th><th>Số tiền</th><th>Ngày (tháng chi phí)</th><th></th></tr>
+    ${sorted.map(e=>`<tr>
+      <td>${e.type}</td><td>${e.branch}</td><td class="mono">${vnd(e.amount)}</td><td class="mono">${e.date}</td>
+      <td class="flex gap8"><button class="btn ghost sm" onclick="editExpense(${e.id})">Sửa</button><button class="btn ghost sm" onclick="deleteExpense(${e.id})">Xóa</button></td>
+    </tr>`).join('') || '<tr><td colspan="5" class="muted small">Chưa có chi phí nào.</td></tr>'}
+  </table></div></div>`;
+};
+window.openAddExpense=()=>{
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>+ Thêm chi phí</h3>
+  <label class="f">Tên chi phí</label><input type="text" id="ex_type" style="width:100%" placeholder="VD: Thuê mặt bằng, Điện nước...">
+  <div class="formgrid" style="margin-top:10px;">
+    <div class="field"><label class="f">Cơ sở</label><select id="ex_branch" style="width:100%">${branchNames().map(b=>`<option>${b}</option>`).join('')}</select></div>
+    <div class="field"><label class="f">Số tiền (đ)</label><input type="number" id="ex_amount" style="width:100%"></div>
+  </div>
+  <label class="f" style="margin-top:10px;">Ngày (tháng chi phí)</label><input type="date" id="ex_date" style="width:100%" value="${TODAY}">
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveExpense()">Lưu chi phí</button></div>`);
+};
+window.saveExpense=()=>{
+  const type=document.getElementById('ex_type').value.trim();
+  if(!type){toast('⚠️ Nhập tên chi phí');return;}
+  const id=state.expenses.length?Math.max(...state.expenses.map(e=>e.id))+1:1;
+  state.expenses.push({id,type,branch:document.getElementById('ex_branch').value,amount:+document.getElementById('ex_amount').value||0,date:document.getElementById('ex_date').value||TODAY});
+  closeModal(); toast('✅ Đã thêm chi phí'); renderSection('chiphi');
+};
+window.editExpense=(id)=>{
+  const e=state.expenses.find(x=>x.id===id);
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>✏️ Sửa chi phí</h3>
+  <label class="f">Tên chi phí</label><input type="text" id="eex_type" style="width:100%" value="${e.type}">
+  <div class="formgrid" style="margin-top:10px;">
+    <div class="field"><label class="f">Cơ sở</label><select id="eex_branch" style="width:100%">${branchNames().map(b=>`<option ${b===e.branch?'selected':''}>${b}</option>`).join('')}</select></div>
+    <div class="field"><label class="f">Số tiền (đ)</label><input type="number" id="eex_amount" style="width:100%" value="${e.amount}"></div>
+  </div>
+  <label class="f" style="margin-top:10px;">Ngày (tháng chi phí)</label><input type="date" id="eex_date" style="width:100%" value="${e.date}">
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveEditExpense(${id})">Cập nhật</button></div>`);
+};
+window.saveEditExpense=(id)=>{
+  const e=state.expenses.find(x=>x.id===id);
+  const type=document.getElementById('eex_type').value.trim();
+  if(!type){toast('⚠️ Tên chi phí không được để trống');return;}
+  e.type=type; e.branch=document.getElementById('eex_branch').value;
+  e.amount=+document.getElementById('eex_amount').value||0; e.date=document.getElementById('eex_date').value||e.date;
+  closeModal(); toast('✅ Đã cập nhật chi phí'); renderSection('chiphi');
+};
+window.deleteExpense=(id)=>{
+  if(!confirm('Xóa chi phí này?')) return;
+  state.expenses=state.expenses.filter(e=>e.id!==id);
+  toast('🗑️ Đã xóa chi phí'); renderSection('chiphi');
+};
+
+/* ---- QUẢN LÝ CƠ SỞ (admin only) ---- */
+RENDER.coso = () => {
+  return `
+  <div class="toolbar">
+    <div class="small muted">Danh sách cơ sở dùng chung cho toàn hệ thống (nhân viên, đơn hàng, chi phí...).</div>
+    <button class="btn primary" onclick="openAddBranch()">+ Thêm cơ sở</button>
+  </div>
+  <div class="tblwrap"><div class="scroller"><table>
+    <tr><th>Tên cơ sở</th><th>Địa chỉ</th><th></th></tr>
+    ${state.branches.map(b=>`<tr>
+      <td><b>${b.name}</b></td><td>${b.address}</td>
+      <td class="flex gap8"><button class="btn ghost sm" onclick="editBranch(${b.id})">Sửa</button><button class="btn ghost sm" onclick="deleteBranch(${b.id})">Xóa</button></td>
+    </tr>`).join('') || '<tr><td colspan="3" class="muted small">Chưa có cơ sở nào.</td></tr>'}
+  </table></div></div>`;
+};
+window.openAddBranch=()=>{
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>+ Thêm cơ sở</h3>
+  <label class="f">Tên cơ sở</label><input type="text" id="br_name" style="width:100%" placeholder="VD: Quận 3">
+  <label class="f" style="margin-top:10px;">Địa chỉ</label><input type="text" id="br_addr" style="width:100%">
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveBranch()">Lưu cơ sở</button></div>`);
+};
+window.saveBranch=()=>{
+  const name=document.getElementById('br_name').value.trim();
+  if(!name){toast('⚠️ Nhập tên cơ sở');return;}
+  if(state.branches.some(b=>b.name===name)){toast('⚠️ Tên cơ sở đã tồn tại');return;}
+  const id=state.branches.length?Math.max(...state.branches.map(b=>b.id))+1:1;
+  state.branches.push({id,name,address:document.getElementById('br_addr').value});
+  closeModal(); toast('✅ Đã thêm cơ sở'); renderSection('coso');
+};
+window.editBranch=(id)=>{
+  const b=state.branches.find(x=>x.id===id);
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>✏️ Sửa cơ sở</h3>
+  <label class="f">Tên cơ sở</label><input type="text" id="ebr_name" style="width:100%" value="${b.name}">
+  <label class="f" style="margin-top:10px;">Địa chỉ</label><input type="text" id="ebr_addr" style="width:100%" value="${b.address}">
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveEditBranch(${id})">Cập nhật</button></div>`);
+};
+window.saveEditBranch=(id)=>{
+  const b=state.branches.find(x=>x.id===id);
+  const name=document.getElementById('ebr_name').value.trim();
+  if(!name){toast('⚠️ Tên cơ sở không được để trống');return;}
+  const oldName=b.name;
+  if(state.branches.some(x=>x.id!==id && x.name===name)){toast('⚠️ Tên cơ sở đã tồn tại');return;}
+  b.name=name; b.address=document.getElementById('ebr_addr').value;
+  // Đồng bộ tên cơ sở mới sang các bản ghi đang tham chiếu theo tên cũ
+  if(oldName!==name){
+    state.staff.forEach(s=>{if(s.branch===oldName)s.branch=name;});
+    state.orders.forEach(o=>{if(o.branch===oldName)o.branch=name;});
+    state.expenses.forEach(e=>{if(e.branch===oldName)e.branch=name;});
+  }
+  closeModal(); toast('✅ Đã cập nhật cơ sở'); renderSection('coso');
+};
+window.deleteBranch=(id)=>{
+  const b=state.branches.find(x=>x.id===id);
+  const inUse = state.staff.some(s=>s.branch===b.name) || state.orders.some(o=>o.branch===b.name) || state.expenses.some(e=>e.branch===b.name);
+  if(inUse){toast('⚠️ Cơ sở "'+b.name+'" đang được dùng bởi nhân viên/đơn hàng/chi phí — không thể xóa.');return;}
+  if(!confirm('Xóa cơ sở "'+b.name+'"?')) return;
+  state.branches=state.branches.filter(x=>x.id!==id);
+  toast('🗑️ Đã xóa cơ sở'); renderSection('coso');
+};
 // re-render body after date change without full page reset
 const _origRenderSection = null;
 
@@ -755,22 +954,38 @@ const _origRenderSection = null;
 RENDER.nhanvien = () => {
   return `
   <div class="toolbar">
-    <div class="small muted">Quản lý hồ sơ nhân viên, lương và tài khoản đăng nhập hệ thống.</div>
+    <div class="flex gap8 center wrap">
+      <label class="f" style="margin:0;">Từ</label><input type="date" id="nv_from" value="2026-06-01">
+      <label class="f" style="margin:0;">Đến</label><input type="date" id="nv_to" value="2026-07-05">
+      <button class="btn primary" onclick="renderSection('nhanvien')">Lọc</button>
+    </div>
     <button class="btn primary" onclick="openAddStaff()">+ Thêm nhân viên</button>
   </div>
-  <div class="tblwrap"><div class="scroller"><table>
-    <tr><th>Tên</th><th>Vị trí</th><th>Cơ sở</th><th>Lương cứng</th><th>Lương hoa hồng</th><th>Tài khoản</th><th></th></tr>
-    ${state.staff.map(staffRow).join('')}
-  </table></div></div>`;
+  <div id="nvBody">${nhanvienBody()}</div>`;
 };
-function staffRow(s){
+function nhanvienBody(){
+  const from=document.getElementById('nv_from')?document.getElementById('nv_from').value:'2026-06-01';
+  const to=document.getElementById('nv_to')?document.getElementById('nv_to').value:'2026-07-05';
+  return `
+  <div class="tblwrap"><div class="scroller"><table>
+    <tr><th>Tên</th><th>Tài khoản</th><th>Vị trí</th><th>Cơ sở</th><th>Lương cứng</th><th>Doanh số dịch vụ</th><th>Doanh số hàng bán</th><th>Hoa hồng (khoảng lọc)</th><th></th></tr>
+    ${state.staff.map(s=>staffRow(s,from,to)).join('')}
+  </table></div></div>`;
+}
+function staffRow(s,from,to){
+  const myOrders=state.orders.filter(o=>o.staff===s.name && o.status!=='Đã huỷ' && o.date>=from && o.date<=to);
+  const svcRevenue=myOrders.filter(o=>o.type==='dichvu').reduce((sum,o)=>sum+o.price,0);
+  const goodsRevenue=myOrders.filter(o=>o.type==='hangban').reduce((sum,o)=>sum+o.price,0);
+  const commission=myOrders.reduce((sum,o)=>sum+orderCommission(o),0);
   return `<tr>
     <td><b>${s.name}</b><div class="muted small">${s.phone}</div></td>
+    <td>${s.username?`<span class="pill ok">@${s.username}</span>`:`<span class="pill">Chưa có</span>`}</td>
     <td>${s.position}</td><td>${s.branch}</td>
     <td class="mono">${vnd(s.baseSalary)}</td>
-    <td class="mono">${vnd(s.commission)}</td>
-    <td>${s.username?`<span class="pill ok">@${s.username}</span>`:`<span class="pill">Chưa có</span>`}</td>
-    <td><button class="btn ghost sm" onclick="editStaff(${s.id})">Sửa</button></td>
+    <td class="mono">${vnd(svcRevenue)}</td>
+    <td class="mono">${vnd(goodsRevenue)}</td>
+    <td class="mono">${vnd(commission)}</td>
+    <td class="flex gap8"><button class="btn ghost sm" onclick="editStaff(${s.id})">Sửa</button><button class="btn ghost sm" onclick="deleteStaff(${s.id})">Xóa</button></td>
   </tr>`;
 }
 window.openAddStaff=()=>{
@@ -779,10 +994,9 @@ window.openAddStaff=()=>{
   <div class="formgrid">
     <div class="field"><label class="f">Họ tên</label><input type="text" id="s_name" style="width:100%"></div>
     <div class="field"><label class="f">Vị trí</label><input type="text" id="s_pos" style="width:100%" placeholder="VD: Groomer"></div>
-    <div class="field"><label class="f">Cơ sở</label><select id="s_branch" style="width:100%">${BRANCHES.map(b=>`<option>${b}</option>`).join('')}</select></div>
+    <div class="field"><label class="f">Cơ sở</label><select id="s_branch" style="width:100%">${branchNames().map(b=>`<option>${b}</option>`).join('')}</select></div>
     <div class="field"><label class="f">SĐT</label><input type="tel" id="s_phone" style="width:100%"></div>
     <div class="field"><label class="f">Lương cứng (đ)</label><input type="number" id="s_base" style="width:100%" value="6000000"></div>
-    <div class="field"><label class="f">Lương hoa hồng dự kiến (đ)</label><input type="number" id="s_comm" style="width:100%" value="0"></div>
     <div class="field"><label class="f">Tên đăng nhập</label><input type="text" id="s_user" style="width:100%" placeholder="Để trống nếu chưa cấp tài khoản"></div>
     <div class="field"><label class="f">Mật khẩu</label><input type="text" id="s_pass" style="width:100%" placeholder="VD: 123456"></div>
   </div>
@@ -795,7 +1009,7 @@ window.saveStaff=()=>{
   if(username && users.find(u=>u.username===username)){toast('⚠️ Tên đăng nhập đã tồn tại');return;}
   const id=Math.max(...state.staff.map(s=>s.id))+1;
   state.staff.push({id,name,position:document.getElementById('s_pos').value||'Nhân viên',branch:document.getElementById('s_branch').value,
-    baseSalary:+document.getElementById('s_base').value||0, commission:+document.getElementById('s_comm').value||0,
+    baseSalary:+document.getElementById('s_base').value||0,
     phone:document.getElementById('s_phone').value, username});
   if(username){
     users.push({username,password:document.getElementById('s_pass').value||'123456',role:'staff',name,staffId:id});
@@ -807,16 +1021,28 @@ window.editStaff=(id)=>{
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
   <h3>✏️ Sửa thông tin — ${s.name}</h3>
   <div class="formgrid">
+    <div class="field"><label class="f">Vị trí</label><input type="text" id="e_pos" style="width:100%" value="${s.position}"></div>
+    <div class="field"><label class="f">Cơ sở</label><select id="e_branch" style="width:100%">${branchNames().map(b=>`<option ${b===s.branch?'selected':''}>${b}</option>`).join('')}</select></div>
+    <div class="field"><label class="f">SĐT</label><input type="tel" id="e_phone" style="width:100%" value="${s.phone}"></div>
     <div class="field"><label class="f">Lương cứng (đ)</label><input type="number" id="e_base" style="width:100%" value="${s.baseSalary}"></div>
-    <div class="field"><label class="f">Lương hoa hồng (đ)</label><input type="number" id="e_comm" style="width:100%" value="${s.commission}"></div>
   </div>
   <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveEditStaff(${id})">Cập nhật</button></div>`);
 };
 window.saveEditStaff=(id)=>{
   const s=state.staff.find(x=>x.id===id);
+  s.position=document.getElementById('e_pos').value||s.position;
+  s.branch=document.getElementById('e_branch').value;
+  s.phone=document.getElementById('e_phone').value;
   s.baseSalary=+document.getElementById('e_base').value||0;
-  s.commission=+document.getElementById('e_comm').value||0;
-  closeModal(); toast('✅ Đã cập nhật lương'); renderSection('nhanvien');
+  closeModal(); toast('✅ Đã cập nhật nhân viên'); renderSection('nhanvien');
+};
+window.deleteStaff=(id)=>{
+  const s=state.staff.find(x=>x.id===id);
+  if(!confirm('Xóa nhân viên "'+s.name+'"? Tài khoản đăng nhập liên kết (nếu có) cũng sẽ bị xóa.')) return;
+  const uidx=users.findIndex(u=>u.staffId===id);
+  if(uidx>-1) users.splice(uidx,1);
+  state.staff=state.staff.filter(x=>x.id!==id);
+  toast('🗑️ Đã xóa nhân viên '+s.name); renderSection('nhanvien');
 };
 
 /* ---- ĐƠN HÀNG ---- */
@@ -824,13 +1050,19 @@ RENDER.donhang = () => {
   return `
   <div class="toolbar">
     <div class="search">🔎 <input placeholder="Tìm dịch vụ, khách hàng..." oninput="filterTable('ordTable',this.value)"></div>
-    <button class="btn primary" onclick="openAddOrder()">+ Thêm đơn hàng</button>
+    <div class="flex gap8">
+      <button class="btn ghost" onclick="openAddOrder()">+ Thêm đơn hàng (nhanh)</button>
+      <button class="btn primary" onclick="openAddOrderWizard()">🙋 Thêm đơn phục vụ mới</button>
+    </div>
   </div>
   <div class="tblwrap"><div class="scroller"><table id="ordTable">
-    <tr><th>Dịch vụ</th><th>Giá</th><th>Cơ sở áp dụng</th><th>Khách hàng</th><th>Ngày</th><th>Trạng thái</th></tr>
+    <tr><th>Dịch vụ / Hàng bán</th><th>Giá</th><th>Chiết khấu</th><th>Cơ sở áp dụng</th><th>Khách hàng</th><th>Nhân viên</th><th>Ngày</th><th>Trạng thái</th><th></th></tr>
     ${state.orders.map(o=>`<tr data-key="${(o.service+' '+o.customer).toLowerCase()}">
-      <td>${o.service}</td><td class="mono">${vnd(o.price)}</td><td>${o.branch}</td><td>${o.customer}</td><td class="mono">${o.date}</td>
+      <td>${o.service}</td><td class="mono">${vnd(o.price)}</td>
+      <td class="mono">${o.discountAmount?vnd(o.discountAmount)+' ('+o.discountPercent+'%)':'—'}</td>
+      <td>${o.branch}</td><td>${o.customer}</td><td>${o.staff||'—'}</td><td class="mono">${o.date}</td>
       <td><span class="pill ${o.status==='Hoàn thành'?'ok':o.status==='Đã huỷ'?'danger':'warn'}">${o.status}</span></td>
+      <td class="flex gap8"><button class="btn ghost sm" onclick="editOrder(${o.id})">Sửa</button><button class="btn ghost sm" onclick="deleteOrder(${o.id})">Xóa</button></td>
     </tr>`).join('')}
   </table></div></div>`;
 };
@@ -842,17 +1074,52 @@ window.openAddOrder=()=>{
       ${state.services.map(s=>`<option value="${s.name}">${s.name}</option>`).join('')}
     </select></div>
     <div class="field"><label class="f">Giá</label><input type="number" id="o_price" style="width:100%" value="${state.services[0].price}"></div>
-    <div class="field"><label class="f">Cơ sở áp dụng</label><select id="o_branch" style="width:100%">${BRANCHES.map(b=>`<option>${b}</option>`).join('')}</select></div>
+    <div class="field"><label class="f">Cơ sở áp dụng</label><select id="o_branch" style="width:100%">${branchNames().map(b=>`<option>${b}</option>`).join('')}</select></div>
     <div class="field"><label class="f">Khách hàng</label><select id="o_cust" style="width:100%">${state.customers.map(c=>`<option>${c.name}</option>`).join('')}</select></div>
-    <div class="field"><label class="f">Ngày</label><input type="date" id="o_date" style="width:100%" value="2026-07-05"></div>
+    <div class="field"><label class="f">Nhân viên phụ trách</label><select id="o_staff" style="width:100%">${state.staff.map(s=>`<option>${s.name}</option>`).join('')}</select></div>
+    <div class="field"><label class="f">Ngày</label><input type="date" id="o_date" style="width:100%" value="${TODAY}"></div>
   </div>
   <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveOrder()">Lưu đơn hàng</button></div>`);
 };
 window.saveOrder=()=>{
   const id=Math.max(...state.orders.map(o=>o.id))+1;
-  state.orders.push({id,service:document.getElementById('o_service').value,price:+document.getElementById('o_price').value,
-    branch:document.getElementById('o_branch').value,customer:document.getElementById('o_cust').value,date:document.getElementById('o_date').value,status:'Đang xử lý'});
+  const service=document.getElementById('o_service').value;
+  const price=+document.getElementById('o_price').value;
+  state.orders.push({id,service,price,branch:document.getElementById('o_branch').value,customer:document.getElementById('o_cust').value,
+    staff:document.getElementById('o_staff').value,date:document.getElementById('o_date').value,status:'Đang xử lý',
+    type:'dichvu',refName:service,originalPrice:price,discountAmount:0,discountPercent:0});
   closeModal(); toast('✅ Đã thêm đơn hàng'); renderSection('donhang');
+};
+window.editOrder=(id)=>{
+  const o=state.orders.find(x=>x.id===id);
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>✏️ Sửa đơn hàng</h3>
+  <div class="formgrid">
+    <div class="field full"><label class="f">Tên dịch vụ / hàng bán</label><input type="text" id="eo_service" style="width:100%" value="${o.service}"></div>
+    <div class="field"><label class="f">Giá</label><input type="number" id="eo_price" style="width:100%" value="${o.price}"></div>
+    <div class="field"><label class="f">Cơ sở áp dụng</label><select id="eo_branch" style="width:100%">${branchNames().map(b=>`<option ${b===o.branch?'selected':''}>${b}</option>`).join('')}</select></div>
+    <div class="field"><label class="f">Khách hàng</label><input type="text" id="eo_cust" style="width:100%" value="${o.customer}"></div>
+    <div class="field"><label class="f">Nhân viên phụ trách</label><select id="eo_staff" style="width:100%">${state.staff.map(s=>`<option ${s.name===o.staff?'selected':''}>${s.name}</option>`).join('')}</select></div>
+    <div class="field"><label class="f">Ngày</label><input type="date" id="eo_date" style="width:100%" value="${o.date}"></div>
+    <div class="field full"><label class="f">Trạng thái</label><select id="eo_status" style="width:100%">${['Đang xử lý','Hoàn thành','Đã huỷ'].map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select></div>
+  </div>
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveEditOrder(${id})">Cập nhật</button></div>`);
+};
+window.saveEditOrder=(id)=>{
+  const o=state.orders.find(x=>x.id===id);
+  o.service=document.getElementById('eo_service').value;
+  o.price=+document.getElementById('eo_price').value||0;
+  o.branch=document.getElementById('eo_branch').value;
+  o.customer=document.getElementById('eo_cust').value;
+  o.staff=document.getElementById('eo_staff').value;
+  o.date=document.getElementById('eo_date').value;
+  o.status=document.getElementById('eo_status').value;
+  closeModal(); toast('✅ Đã cập nhật đơn hàng'); renderSection('donhang');
+};
+window.deleteOrder=(id)=>{
+  if(!confirm('Xóa đơn hàng này?')) return;
+  state.orders=state.orders.filter(o=>o.id!==id);
+  toast('🗑️ Đã xóa đơn hàng'); renderSection('donhang');
 };
 window.filterTable=(tableId,q)=>{
   q=q.toLowerCase();
@@ -863,98 +1130,339 @@ window.filterTable=(tableId,q)=>{
 RENDER.dichvu = () => {
   return `
   <div class="toolbar">
-    <div class="small muted">Bảng giá dịch vụ và số lượt sử dụng tích luỹ.</div>
+    <div class="small muted">Bảng giá dịch vụ, số lượt sử dụng và % hoa hồng (có thể tùy chỉnh theo từng nhân viên).</div>
     <button class="btn primary" onclick="openAddService()">+ Thêm dịch vụ</button>
   </div>
   <div class="tblwrap"><div class="scroller"><table>
-    <tr><th>Tên dịch vụ</th><th>Giá</th><th>Số lượt đã sử dụng</th><th></th></tr>
-    ${state.services.map(s=>`<tr><td><b>${s.name}</b></td><td class="mono">${vnd(s.price)}</td><td class="mono">${s.used}</td>
-      <td><button class="btn ghost sm" onclick="editService(${s.id})">Sửa giá</button></td></tr>`).join('')}
+    <tr><th>Tên dịch vụ</th><th>Giá</th><th>Số lượt đã sử dụng</th><th>Hoa hồng mặc định</th><th></th></tr>
+    ${state.services.map(s=>`<tr><td><b>${s.name}</b></td><td class="mono">${vnd(s.price)}</td><td class="mono">${s.used}</td><td class="mono">${s.commissionRate}%</td>
+      <td class="flex gap8"><button class="btn ghost sm" onclick="editService(${s.id})">Sửa</button><button class="btn ghost sm" onclick="deleteService(${s.id})">Xóa</button></td></tr>`).join('')}
   </table></div></div>`;
 };
 window.openAddService=()=>{
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
   <h3>+ Thêm dịch vụ</h3>
   <label class="f">Tên dịch vụ</label><input type="text" id="sv_name" style="width:100%">
-  <label class="f" style="margin-top:10px;">Giá (đ)</label><input type="number" id="sv_price" style="width:100%">
+  <div class="formgrid" style="margin-top:10px;">
+    <div class="field"><label class="f">Giá (đ)</label><input type="number" id="sv_price" style="width:100%"></div>
+    <div class="field"><label class="f">Hoa hồng mặc định (%)</label><input type="number" id="sv_comm" style="width:100%" value="10"></div>
+  </div>
   <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveService()">Lưu</button></div>`);
 };
 window.saveService=()=>{
   const name=document.getElementById('sv_name').value.trim();
   if(!name){toast('⚠️ Nhập tên dịch vụ');return;}
-  const id=Math.max(...state.services.map(s=>s.id))+1;
-  state.services.push({id,name,price:+document.getElementById('sv_price').value||0,used:0});
+  const id=Math.max(0,...state.services.map(s=>s.id))+1;
+  state.services.push({id,name,price:+document.getElementById('sv_price').value||0,used:0,commissionRate:+document.getElementById('sv_comm').value||0,staffRates:{}});
   closeModal(); toast('✅ Đã thêm dịch vụ'); renderSection('dichvu');
 };
 window.editService=(id)=>{
   const s=state.services.find(x=>x.id===id);
-  const np=prompt('Giá mới cho "'+s.name+'":',s.price);
-  if(np!==null && !isNaN(+np)){s.price=+np; toast('✅ Đã cập nhật giá'); renderSection('dichvu');}
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>✏️ Sửa dịch vụ</h3>
+  <label class="f">Tên dịch vụ</label><input type="text" id="ev_name" style="width:100%" value="${s.name}">
+  <div class="formgrid" style="margin-top:10px;">
+    <div class="field"><label class="f">Giá (đ)</label><input type="number" id="ev_price" style="width:100%" value="${s.price}"></div>
+    <div class="field"><label class="f">Hoa hồng mặc định (%)</label><input type="number" id="ev_comm" style="width:100%" value="${s.commissionRate}"></div>
+  </div>
+  <div class="divider"></div>
+  <b>Hoa hồng riêng theo từng nhân viên</b>
+  <div class="small muted" style="margin:4px 0 8px;">Để trống = áp dụng mức mặc định ở trên.</div>
+  ${state.staff.map(st=>`<div class="flex between center" style="padding:5px 0;">
+    <span class="small">${st.name}</span>
+    <input type="number" placeholder="${s.commissionRate}%" style="width:80px;" id="ev_rate_${st.id}" value="${s.staffRates[st.id]!=null?s.staffRates[st.id]:''}">
+  </div>`).join('')}
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveEditService(${id})">Cập nhật</button></div>`);
+};
+window.saveEditService=(id)=>{
+  const s=state.services.find(x=>x.id===id);
+  const name=document.getElementById('ev_name').value.trim();
+  if(!name){toast('⚠️ Tên dịch vụ không được để trống');return;}
+  s.name=name; s.price=+document.getElementById('ev_price').value||0; s.commissionRate=+document.getElementById('ev_comm').value||0;
+  state.staff.forEach(st=>{
+    const el=document.getElementById('ev_rate_'+st.id);
+    const v=el.value.trim();
+    if(v==='') delete s.staffRates[st.id]; else s.staffRates[st.id]=+v;
+  });
+  closeModal(); toast('✅ Đã cập nhật dịch vụ'); renderSection('dichvu');
+};
+window.deleteService=(id)=>{
+  const s=state.services.find(x=>x.id===id);
+  if(!confirm('Xóa dịch vụ "'+s.name+'"?')) return;
+  state.services=state.services.filter(x=>x.id!==id);
+  toast('🗑️ Đã xóa dịch vụ'); renderSection('dichvu');
 };
 
-/* ---- HÀNG BÁN ---- */
+/* ---- HÀNG BÁN (liên kết bắt buộc với Kho hàng) ---- */
 RENDER.hangban = () => {
   return `
   <div class="toolbar">
-    <div class="small muted">Sản phẩm bán lẻ hiển thị tại cửa hàng.</div>
-    <button class="btn primary" onclick="openAddProduct('retail')">+ Thêm hàng bán</button>
+    <div class="small muted">Sản phẩm bán lẻ — mỗi mặt hàng bán ra đều lấy từ Kho hàng (giá nhập ở Kho, giá bán ở đây).</div>
+    <button class="btn primary" onclick="openAddRetail()">+ Thêm hàng bán</button>
   </div>
-  <div class="prodcards">${state.retail.map(p=>productCard(p,'retail','price')).join('')}</div>`;
+  <div class="prodcards">${state.retail.map(r=>retailCard(retailView(r))).join('')}</div>`;
+};
+function retailCard(rv){
+  return `<div class="pcard">
+    <div class="thumb">${rv.image?`<img src="${rv.image}">`:'📦'}</div>
+    <div class="body">
+      <div class="cat">${rv.category}</div>
+      <div class="name">${rv.name}</div>
+      <div class="price">${vnd(rv.sellPrice)} <span class="muted small">/ giá bán</span></div>
+      <div class="small muted" style="margin-top:4px;">Giá nhập kho: ${vnd(rv.costPrice)} · Tồn: ${rv.stock}</div>
+      <div class="small" style="margin-top:2px;">Hoa hồng: <b>${rv.commissionRate}%</b></div>
+    </div>
+    <div class="actrow"><button class="btn ghost sm" style="flex:1;justify-content:center;" onclick="editRetail(${rv.retailId})">✏️ Sửa</button><button class="btn ghost sm" style="flex:1;justify-content:center;" onclick="deleteRetail(${rv.retailId})">🗑️ Xóa</button></div>
+  </div>`;
+}
+window.openAddRetail=()=>{
+  const availableWarehouse = state.warehouse.filter(w=>!state.retail.some(r=>r.warehouseId===w.id));
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>+ Thêm hàng bán</h3>
+  <div class="flex gap8" style="margin-bottom:10px;">
+    <label class="small"><input type="radio" name="retMode" value="existing" ${availableWarehouse.length?'checked':''} ${availableWarehouse.length?'':'disabled'} onchange="toggleRetailMode('existing')"> Chọn từ kho có sẵn</label>
+    <label class="small"><input type="radio" name="retMode" value="new" ${availableWarehouse.length?'':'checked'} onchange="toggleRetailMode('new')"> Tạo mặt hàng mới</label>
+  </div>
+  <div id="retExistingWrap" class="${availableWarehouse.length?'':'hidden'}">
+    <label class="f">Chọn từ kho hàng</label>
+    <select id="ret_wh_select" style="width:100%">${availableWarehouse.map(w=>`<option value="${w.id}">${w.name} (${w.category}) — giá nhập ${vnd(w.costPrice)}</option>`).join('')}</select>
+  </div>
+  <div id="retNewWrap" class="${availableWarehouse.length?'hidden':''}">
+    <div class="formgrid">
+      <div class="field"><label class="f">Loại</label><input type="text" id="ret_cat" style="width:100%" placeholder="VD: Thức ăn, Phụ kiện..."></div>
+      <div class="field"><label class="f">Tên sản phẩm</label><input type="text" id="ret_name" style="width:100%"></div>
+      <div class="field"><label class="f">Giá nhập kho (đ)</label><input type="number" id="ret_cost" style="width:100%"></div>
+      <div class="field"><label class="f">Số lượng tồn ban đầu</label><input type="number" id="ret_stock" style="width:100%" value="0"></div>
+    </div>
+  </div>
+  <label class="f" style="margin-top:10px;">Giá bán cho khách (đ)</label><input type="number" id="ret_sell" style="width:100%">
+  <label class="f" style="margin-top:10px;">Hoa hồng mặc định (%)</label><input type="number" id="ret_comm" style="width:100%" value="5">
+  <label class="f" style="margin-top:10px;">Hình ảnh</label>
+  <div class="photobox" style="height:100px;" id="ret_photo_box">Bấm để tải ảnh<input type="file" accept="image/*" onchange="retPhotoChange(this)"></div>
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveRetail()">Lưu hàng bán</button></div>`);
+};
+let retPhoto='';
+window.toggleRetailMode=(mode)=>{
+  document.getElementById('retExistingWrap').classList.toggle('hidden',mode!=='existing');
+  document.getElementById('retNewWrap').classList.toggle('hidden',mode!=='new');
+};
+window.retPhotoChange=(input)=>{
+  readImage(input,(dataUrl)=>{
+    retPhoto=dataUrl;
+    document.getElementById('ret_photo_box').innerHTML=`<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;"><input type="file" accept="image/*" onchange="retPhotoChange(this)">`;
+  });
+};
+window.saveRetail=()=>{
+  retPhoto = retPhoto || '';
+  const mode=document.querySelector('input[name="retMode"]:checked').value;
+  const sellPrice=+document.getElementById('ret_sell').value||0;
+  const commissionRate=+document.getElementById('ret_comm').value||0;
+  let warehouseId;
+  if(mode==='existing'){
+    warehouseId=+document.getElementById('ret_wh_select').value;
+    if(retPhoto){ const w=warehouseById(warehouseId); w.image=retPhoto; }
+  } else {
+    const name=document.getElementById('ret_name').value.trim();
+    if(!name){toast('⚠️ Nhập tên sản phẩm');return;}
+    warehouseId=Math.max(0,...state.warehouse.map(w=>w.id))+1;
+    state.warehouse.push({id:warehouseId,category:document.getElementById('ret_cat').value||'Khác',name,
+      costPrice:+document.getElementById('ret_cost').value||0, stock:+document.getElementById('ret_stock').value||0, image:retPhoto});
+  }
+  const id=state.retail.length?Math.max(...state.retail.map(r=>r.id))+1:1;
+  state.retail.push({id,warehouseId,sellPrice,commissionRate,staffRates:{}});
+  retPhoto='';
+  closeModal(); toast('✅ Đã thêm hàng bán'); renderSection('hangban');
+};
+window.editRetail=(retailId)=>{
+  const r=state.retail.find(x=>x.id===retailId);
+  const rv=retailView(r);
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>✏️ Sửa hàng bán</h3>
+  <div class="formgrid">
+    <div class="field"><label class="f">Loại</label><input type="text" id="er_cat" style="width:100%" value="${rv.category}"></div>
+    <div class="field"><label class="f">Tên sản phẩm</label><input type="text" id="er_name" style="width:100%" value="${rv.name}"></div>
+  </div>
+  <div class="formgrid" style="margin-top:10px;">
+    <div class="field"><label class="f">Giá bán cho khách (đ)</label><input type="number" id="er_sell" style="width:100%" value="${rv.sellPrice}"></div>
+    <div class="field"><label class="f">Hoa hồng mặc định (%)</label><input type="number" id="er_comm" style="width:100%" value="${r.commissionRate}"></div>
+  </div>
+  <div class="small muted" style="margin-top:6px;">Giá nhập kho hiện tại: ${vnd(rv.costPrice)} · Tồn: ${rv.stock} — chỉnh tại Quản lý kho hàng.</div>
+  <label class="f" style="margin-top:10px;">Hình ảnh</label>
+  <div class="photobox" style="height:100px;" id="er_photo_box">${rv.image?`<img src="${rv.image}" style="width:100%;height:100%;object-fit:cover;">`:'Bấm để tải ảnh'}<input type="file" accept="image/*" onchange="erPhotoChange(this)"></div>
+  <div class="divider"></div>
+  <b>Hoa hồng riêng theo từng nhân viên</b>
+  <div class="small muted" style="margin:4px 0 8px;">Để trống = áp dụng mức mặc định ở trên.</div>
+  ${state.staff.map(st=>`<div class="flex between center" style="padding:5px 0;">
+    <span class="small">${st.name}</span>
+    <input type="number" placeholder="${r.commissionRate}%" style="width:80px;" id="er_rate_${st.id}" value="${r.staffRates[st.id]!=null?r.staffRates[st.id]:''}">
+  </div>`).join('')}
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveEditRetail(${retailId})">Cập nhật</button></div>`);
+};
+let erPhoto=null;
+window.erPhotoChange=(input)=>{
+  readImage(input,(dataUrl)=>{
+    erPhoto=dataUrl;
+    document.getElementById('er_photo_box').innerHTML=`<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;"><input type="file" accept="image/*" onchange="erPhotoChange(this)">`;
+  });
+};
+window.saveEditRetail=(retailId)=>{
+  const r=state.retail.find(x=>x.id===retailId);
+  const w=warehouseById(r.warehouseId);
+  const name=document.getElementById('er_name').value.trim();
+  if(!name){toast('⚠️ Tên sản phẩm không được để trống');return;}
+  w.category=document.getElementById('er_cat').value||'Khác';
+  w.name=name;
+  if(erPhoto) w.image=erPhoto;
+  r.sellPrice=+document.getElementById('er_sell').value||0;
+  r.commissionRate=+document.getElementById('er_comm').value||0;
+  state.staff.forEach(st=>{
+    const el=document.getElementById('er_rate_'+st.id);
+    const v=el.value.trim();
+    if(v==='') delete r.staffRates[st.id]; else r.staffRates[st.id]=+v;
+  });
+  erPhoto=null;
+  closeModal(); toast('✅ Đã cập nhật hàng bán'); renderSection('hangban');
+};
+window.deleteRetail=(retailId)=>{
+  const r=state.retail.find(x=>x.id===retailId);
+  const rv=retailView(r);
+  if(!confirm('Ngừng bán "'+rv.name+'"? Mặt hàng vẫn còn trong Kho hàng, chỉ gỡ khỏi danh mục Hàng bán.')) return;
+  state.retail=state.retail.filter(x=>x.id!==retailId);
+  toast('🗑️ Đã gỡ khỏi Hàng bán'); renderSection('hangban');
 };
 
-/* ---- KHO HÀNG ---- */
+/* ---- KHO HÀNG (nguồn dữ liệu gốc — hàng bán tham chiếu tới đây) ---- */
 RENDER.khohang = () => {
   return `
   <div class="toolbar">
-    <div class="small muted">Tồn kho theo giá nhập, dùng để tính giá vốn.</div>
-    <button class="btn primary" onclick="openAddProduct('warehouse')">+ Thêm vào kho</button>
+    <div class="small muted">Tồn kho theo giá nhập. Mặt hàng đang được bán lẻ sẽ có thẻ "🛍️ Đang bán".</div>
+    <button class="btn primary" onclick="openAddWarehouse()">+ Thêm vào kho</button>
   </div>
-  <div class="prodcards">${state.warehouse.map(p=>productCard(p,'warehouse','costPrice')).join('')}</div>`;
+  <div class="prodcards">${state.warehouse.map(warehouseCard).join('')}</div>`;
 };
-function productCard(p,list,priceField){
-  const low = list==='warehouse' && p.stock<8;
+function warehouseCard(w){
+  const low = w.stock<8;
+  const linkedRetail = state.retail.find(r=>r.warehouseId===w.id);
   return `<div class="pcard">
-    <div class="thumb">${p.image?`<img src="${p.image}">`:'📦'}</div>
+    <div class="thumb">${w.image?`<img src="${w.image}">`:'📦'}</div>
     <div class="body">
-      <div class="cat">${p.category}</div>
-      <div class="name">${p.name}</div>
-      <div class="price">${vnd(p[priceField])}${list==='warehouse'?' <span class="muted small">/ giá nhập</span>':''}</div>
-      ${list==='warehouse'?`<div class="small" style="margin-top:4px;">Tồn: <b>${p.stock}</b> ${low?'<span class="pill danger">Sắp hết</span>':'<span class="pill ok">Ổn định</span>'}</div>`:''}
+      <div class="cat">${w.category}</div>
+      <div class="name">${w.name}</div>
+      <div class="price">${vnd(w.costPrice)} <span class="muted small">/ giá nhập</span></div>
+      <div class="small" style="margin-top:4px;">Tồn: <b>${w.stock}</b> ${low?'<span class="pill danger">Sắp hết</span>':'<span class="pill ok">Ổn định</span>'}
+      ${linkedRetail?` <span class="pill status-tam">🛍️ Đang bán ${vnd(linkedRetail.sellPrice)}</span>`:''}</div>
     </div>
-    <div class="actrow">
-      <button class="btn ghost sm" onclick="uploadImgFor('${list}',${p.id})">Đổi ảnh</button>
-      <input type="file" accept="image/*" id="imgin_${list}_${p.id}" style="display:none" onchange="handleImgUpload('${list}',${p.id},this)">
+    <div class="actrow" style="flex-wrap:wrap;">
+      <button class="btn ghost sm" style="flex:1;justify-content:center;" onclick="restockWarehouse(${w.id})">📥 Nhập hàng</button>
+      <button class="btn ghost sm" style="flex:1;justify-content:center;" onclick="editWarehouse(${w.id})">✏️ Sửa</button>
+      <button class="btn ghost sm" style="flex:1;justify-content:center;" onclick="deleteWarehouse(${w.id})">🗑️ Xóa</button>
     </div>
   </div>`;
 }
-window.uploadImgFor=(list,id)=>{document.getElementById('imgin_'+list+'_'+id).click();};
-window.handleImgUpload=(list,id,input)=>{
+window.restockWarehouse=(id)=>{
+  const w=warehouseById(id);
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>📥 Nhập hàng — ${w.name}</h3>
+  <div class="formgrid">
+    <div class="field"><label class="f">Cơ sở nhập</label><select id="rs_branch" style="width:100%">${branchNames().map(b=>`<option>${b}</option>`).join('')}</select></div>
+    <div class="field"><label class="f">Số lượng nhập</label><input type="number" id="rs_qty" style="width:100%" value="1" min="1"></div>
+    <div class="field"><label class="f">Giá nhập / đơn vị (đ)</label><input type="number" id="rs_cost" style="width:100%" value="${w.costPrice}"></div>
+    <div class="field"><label class="f">Ngày nhập</label><input type="date" id="rs_date" style="width:100%" value="${TODAY}"></div>
+  </div>
+  <div class="small muted" style="margin-top:8px;">Sẽ tự động cộng vào tồn kho và ghi một dòng chi phí tương ứng trong Quản lý chi phí.</div>
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveRestock(${id})">Xác nhận nhập</button></div>`);
+};
+window.saveRestock=(id)=>{
+  const w=warehouseById(id);
+  const qty=+document.getElementById('rs_qty').value||0;
+  const cost=+document.getElementById('rs_cost').value||0;
+  const branch=document.getElementById('rs_branch').value;
+  const date=document.getElementById('rs_date').value||TODAY;
+  if(qty<=0){toast('⚠️ Số lượng nhập phải lớn hơn 0');return;}
+  w.stock+=qty; w.costPrice=cost;
+  const eid=state.expenses.length?Math.max(...state.expenses.map(e=>e.id))+1:1;
+  state.expenses.push({id:eid,type:'Nhập kho: '+w.name+' (x'+qty+')',branch,amount:cost*qty,date});
+  closeModal(); toast('✅ Đã nhập '+qty+' '+w.name+' — đã ghi chi phí tương ứng'); renderSection('khohang');
+};
+window.deleteWarehouse=(id)=>{
+  const w=warehouseById(id);
+  const linked=state.retail.find(r=>r.warehouseId===id);
+  if(linked){toast('⚠️ Mặt hàng đang được bán tại Hàng bán — gỡ khỏi Hàng bán trước khi xóa khỏi Kho.');return;}
+  if(!confirm('Xóa "'+w.name+'" khỏi kho hàng?')) return;
+  state.warehouse=state.warehouse.filter(x=>x.id!==id);
+  toast('🗑️ Đã xóa khỏi kho'); renderSection('khohang');
+};
+window.openAddWarehouse=()=>{
+  wPhoto='';
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>+ Thêm vào kho</h3>
+  <label class="f">Loại</label><input type="text" id="w_cat" style="width:100%" placeholder="VD: Thức ăn, Nguyên liệu spa...">
+  <label class="f" style="margin-top:10px;">Tên sản phẩm</label><input type="text" id="w_name" style="width:100%">
+  <div class="formgrid" style="margin-top:10px;">
+    <div class="field"><label class="f">Giá nhập (đ)</label><input type="number" id="w_cost" style="width:100%"></div>
+    <div class="field"><label class="f">Số lượng tồn ban đầu</label><input type="number" id="w_stock" style="width:100%" value="0"></div>
+  </div>
+  <label class="f" style="margin-top:10px;">Cơ sở nhập (để ghi chi phí nếu có tồn ban đầu)</label>
+  <select id="w_branch" style="width:100%">${branchNames().map(b=>`<option>${b}</option>`).join('')}</select>
+  <label class="f" style="margin-top:10px;">Hình ảnh</label>
+  <div class="photobox" style="height:100px;" id="w_photo_box">Bấm để tải ảnh<input type="file" accept="image/*" onchange="wPhotoChange(this)"></div>
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveWarehouse()">Lưu</button></div>`);
+};
+let wPhoto='';
+window.wPhotoChange=(input)=>{
   readImage(input,(dataUrl)=>{
-    const arr = list==='retail'?state.retail:state.warehouse;
-    arr.find(p=>p.id===id).image=dataUrl;
-    renderSection(list==='retail'?'hangban':'khohang');
-    toast('🖼️ Đã cập nhật hình ảnh');
+    wPhoto=dataUrl;
+    document.getElementById('w_photo_box').innerHTML=`<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;"><input type="file" accept="image/*" onchange="wPhotoChange(this)">`;
   });
 };
-window.openAddProduct=(list)=>{
-  const isWarehouse=list==='warehouse';
-  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
-  <h3>+ Thêm ${isWarehouse?'hàng vào kho':'hàng bán'}</h3>
-  <label class="f">Loại</label><input type="text" id="p_cat" style="width:100%" placeholder="VD: Thức ăn, Phụ kiện...">
-  <label class="f" style="margin-top:10px;">Tên sản phẩm</label><input type="text" id="p_name" style="width:100%">
-  <label class="f" style="margin-top:10px;">${isWarehouse?'Giá nhập (đ)':'Giá bán (đ)'}</label><input type="number" id="p_price" style="width:100%">
-  ${isWarehouse?`<label class="f" style="margin-top:10px;">Số lượng tồn</label><input type="number" id="p_stock" style="width:100%" value="0">`:''}
-  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveProduct('${list}')">Lưu</button></div>`);
-};
-window.saveProduct=(list)=>{
-  const name=document.getElementById('p_name').value.trim();
+window.saveWarehouse=()=>{
+  const name=document.getElementById('w_name').value.trim();
   if(!name){toast('⚠️ Nhập tên sản phẩm');return;}
-  const arr = list==='retail'?state.retail:state.warehouse;
-  const id=arr.length?Math.max(...arr.map(p=>p.id))+1:1;
-  const priceVal=+document.getElementById('p_price').value||0;
-  if(list==='retail') arr.push({id,category:document.getElementById('p_cat').value||'Khác',name,price:priceVal,image:''});
-  else arr.push({id,category:document.getElementById('p_cat').value||'Khác',name,costPrice:priceVal,stock:+document.getElementById('p_stock').value||0,image:''});
-  closeModal(); toast('✅ Đã thêm sản phẩm'); renderSection(list==='retail'?'hangban':'khohang');
+  const id=state.warehouse.length?Math.max(...state.warehouse.map(w=>w.id))+1:1;
+  const costPrice=+document.getElementById('w_cost').value||0;
+  const stock=+document.getElementById('w_stock').value||0;
+  const branch=document.getElementById('w_branch').value;
+  state.warehouse.push({id,category:document.getElementById('w_cat').value||'Khác',name,costPrice, stock, image:wPhoto});
+  if(stock>0){
+    const eid=state.expenses.length?Math.max(...state.expenses.map(e=>e.id))+1:1;
+    state.expenses.push({id:eid,type:'Nhập kho: '+name+' (x'+stock+')',branch,amount:costPrice*stock,date:TODAY});
+  }
+  wPhoto='';
+  closeModal(); toast('✅ Đã thêm vào kho'); renderSection('khohang');
+};
+window.editWarehouse=(id)=>{
+  const w=warehouseById(id);
+  ewPhoto=null;
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>✏️ Sửa hàng trong kho</h3>
+  <div class="formgrid">
+    <div class="field"><label class="f">Loại</label><input type="text" id="ew_cat" style="width:100%" value="${w.category}"></div>
+    <div class="field"><label class="f">Tên sản phẩm</label><input type="text" id="ew_name" style="width:100%" value="${w.name}"></div>
+    <div class="field"><label class="f">Giá nhập (đ)</label><input type="number" id="ew_cost" style="width:100%" value="${w.costPrice}"></div>
+    <div class="field"><label class="f">Số lượng tồn</label><input type="number" id="ew_stock" style="width:100%" value="${w.stock}"></div>
+  </div>
+  <label class="f" style="margin-top:10px;">Hình ảnh</label>
+  <div class="photobox" style="height:100px;" id="ew_photo_box">${w.image?`<img src="${w.image}" style="width:100%;height:100%;object-fit:cover;">`:'Bấm để tải ảnh'}<input type="file" accept="image/*" onchange="ewPhotoChange(this)"></div>
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveEditWarehouse(${id})">Cập nhật</button></div>`);
+};
+let ewPhoto=null;
+window.ewPhotoChange=(input)=>{
+  readImage(input,(dataUrl)=>{
+    ewPhoto=dataUrl;
+    document.getElementById('ew_photo_box').innerHTML=`<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;"><input type="file" accept="image/*" onchange="ewPhotoChange(this)">`;
+  });
+};
+window.saveEditWarehouse=(id)=>{
+  const w=warehouseById(id);
+  const name=document.getElementById('ew_name').value.trim();
+  if(!name){toast('⚠️ Tên sản phẩm không được để trống');return;}
+  w.category=document.getElementById('ew_cat').value||'Khác';
+  w.name=name;
+  w.costPrice=+document.getElementById('ew_cost').value||0;
+  w.stock=+document.getElementById('ew_stock').value||0;
+  if(ewPhoto) w.image=ewPhoto;
+  ewPhoto=null;
+  closeModal(); toast('✅ Đã cập nhật kho hàng'); renderSection('khohang');
 };
 
 /* ---- KHÁCH HÀNG ---- */
@@ -971,7 +1479,7 @@ RENDER.khachhang = () => {
       <td>${c.phone}</td><td>${c.email}</td>
       <td><span class="pill ${c.tier.toLowerCase()}">${c.tier}</span></td>
       <td class="mono">${c.points}</td>
-      <td><a class="linklike" onclick="openCustomer(${c.id})">Xem hồ sơ</a></td>
+      <td><a class="linklike" onclick="openCustomer(${c.id})">Xem hồ sơ</a> · <a class="linklike" onclick="editCustomer(${c.id})">Sửa</a> · <a class="linklike" onclick="deleteCustomer(${c.id})">Xóa</a></td>
     </tr>`).join('')}
   </table></div></div>`;
 };
@@ -985,6 +1493,7 @@ window.openCustomer=(id)=>{
     <div class="full"><b>Địa chỉ:</b> ${c.address}</div>
     <div><b>Điểm tích lũy:</b> ${c.points}</div>
   </div>
+  <button class="btn ghost sm" onclick="editCustomer(${id})">✏️ Sửa hồ sơ</button>
   <div class="divider"></div>
   <div class="flex between center"><b>Lịch đặt sắp tới</b><button class="btn ghost sm" onclick="openAddBooking(${id})">+ Đặt lịch</button></div>
   ${c.bookings.length?c.bookings.map(b=>`<div class="chip" style="margin-top:8px;display:inline-block;">📅 ${b.date} · ${b.service} ${b.time!=='—'?'· '+b.time:''}</div>`).join('<br>'):'<div class="muted small" style="margin-top:8px;">Chưa có lịch hẹn nào.</div>'}
@@ -997,6 +1506,37 @@ window.openCustomer=(id)=>{
   <b>Thú cưng</b>
   <div class="chip-list" style="margin-top:8px;">${pets.map(p=>`<span class="chip">🐾 ${p.name} (${p.breed})</span>`).join('')||'<span class="muted small">Chưa có thú cưng.</span>'}</div>
   `);
+};
+window.editCustomer=(id)=>{
+  const c=ownerById(id);
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>✏️ Sửa hồ sơ — ${c.name}</h3>
+  <div class="formgrid">
+    <div class="field"><label class="f">Họ tên</label><input type="text" id="ec_name" style="width:100%" value="${c.name}"></div>
+    <div class="field"><label class="f">SĐT</label><input type="tel" id="ec_phone" style="width:100%" value="${c.phone}"></div>
+    <div class="field"><label class="f">Email</label><input type="email" id="ec_email" style="width:100%" value="${c.email}"></div>
+    <div class="field"><label class="f">Hạng thành viên</label><select id="ec_tier" style="width:100%">${['Silver','Gold','Platinum','Diamond'].map(t=>`<option ${t===c.tier?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="field"><label class="f">Điểm tích lũy</label><input type="number" id="ec_points" style="width:100%" value="${c.points}"></div>
+    <div class="field full"><label class="f">Địa chỉ</label><input type="text" id="ec_addr" style="width:100%" value="${c.address}"></div>
+  </div>
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveEditCustomer(${id})">Cập nhật</button></div>`);
+};
+window.saveEditCustomer=(id)=>{
+  const c=ownerById(id);
+  const name=document.getElementById('ec_name').value.trim();
+  if(!name){toast('⚠️ Họ tên không được để trống');return;}
+  c.name=name; c.phone=document.getElementById('ec_phone').value; c.email=document.getElementById('ec_email').value;
+  c.tier=document.getElementById('ec_tier').value; c.points=+document.getElementById('ec_points').value||0;
+  c.address=document.getElementById('ec_addr').value;
+  closeModal(); toast('✅ Đã cập nhật hồ sơ khách hàng'); renderSection('khachhang');
+};
+window.deleteCustomer=(id)=>{
+  const c=ownerById(id);
+  const petCount=state.pets.filter(p=>p.ownerId===id).length;
+  if(!confirm('Xóa khách hàng "'+c.name+'"?'+(petCount?' ('+petCount+' thú cưng liên quan cũng sẽ bị xóa)':''))) return;
+  state.pets=state.pets.filter(p=>p.ownerId!==id);
+  state.customers=state.customers.filter(x=>x.id!==id);
+  toast('🗑️ Đã xóa khách hàng '+c.name); renderSection('khachhang');
 };
 window.openAddBooking=(custId)=>{
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
@@ -1040,11 +1580,18 @@ RENDER.pet = () => {
     <button class="btn primary" onclick="openAddPet()">+ Thêm Pet</button>
   </div>
   <div class="tblwrap"><div class="scroller"><table id="petTable">
-    <tr><th>Tên Pet</th><th>Giống</th><th>Chủ nuôi</th><th>Ghi chú</th></tr>
+    <tr><th>Tên Pet</th><th>Giống</th><th>Chủ nuôi</th><th>Ghi chú</th><th></th></tr>
     ${state.pets.map(p=>`<tr data-key="${p.name.toLowerCase()}">
       <td><b>🐾 ${p.name}</b></td><td>${p.breed}</td><td>${ownerById(p.ownerId).name}</td><td>${p.note||'—'}</td>
+      <td><button class="btn ghost sm" onclick="deletePet(${p.id})">Xóa</button></td>
     </tr>`).join('')}
   </table></div></div>`;
+};
+window.deletePet=(id)=>{
+  const p=petById(id);
+  if(!confirm('Xóa pet "'+p.name+'"?')) return;
+  state.pets=state.pets.filter(x=>x.id!==id);
+  toast('🗑️ Đã xóa pet '+p.name); renderSection('pet');
 };
 window.openAddPet=()=>{
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
@@ -1129,6 +1676,85 @@ window.saveSpaJob=()=>{
   state.spaJobs.push({id,petId:+document.getElementById('sj_pet').value,service:document.getElementById('sj_service').value,status:'Chờ',
     staff:{'Chờ':'','Tắm':'','Cắt':'','Hoàn thiện':''},before:'',after:''});
   closeModal(); toast('✅ Đã tạo ca spa mới'); renderSection('spa');
+};
+
+/* ---- QUẢN LÝ TÀI KHOẢN (admin only) — đổi username/password của admin & nhân viên ---- */
+RENDER.taikhoan = () => {
+  const adminUser = users.find(u=>u.role==='admin');
+  const rows = [{ key:'admin', name:adminUser.name, role:'Quản trị viên (Admin)', username:adminUser.username, staffId:null }]
+    .concat(state.staff.map(s=>{
+      const u=users.find(x=>x.staffId===s.id);
+      return { key:'staff', name:s.name, role:s.position, username:u?u.username:'', staffId:s.id };
+    }));
+  return `
+  <div class="toolbar">
+    <div class="small muted">Đổi tên đăng nhập và mật khẩu cho tài khoản Admin và toàn bộ tài khoản Nhân viên.</div>
+  </div>
+  <div class="tblwrap"><div class="scroller"><table>
+    <tr><th>Tên</th><th>Vai trò</th><th>Tài khoản</th><th></th></tr>
+    ${rows.map(r=>`<tr>
+      <td><b>${r.name}</b></td><td>${r.role}</td>
+      <td>${r.username?`<span class="pill ok">@${r.username}</span>`:`<span class="pill">Chưa có tài khoản</span>`}</td>
+      <td>${r.key==='admin'?`<button class="btn ghost sm" onclick="editAdminAccount()">Đổi tên/mật khẩu</button>`
+           : r.username?`<button class="btn ghost sm" onclick="editStaffAccount(${r.staffId})">Đổi tên/mật khẩu</button>`
+           : `<button class="btn ghost sm" onclick="createStaffAccount(${r.staffId})">+ Tạo tài khoản</button>`}</td>
+    </tr>`).join('')}
+  </table></div></div>`;
+};
+window.editAdminAccount=()=>{
+  const u=users.find(x=>x.role==='admin');
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>🔑 Đổi tài khoản Admin</h3>
+  <label class="f">Tên đăng nhập</label><input type="text" id="ua_user" style="width:100%" value="${u.username}">
+  <label class="f" style="margin-top:10px;">Mật khẩu mới (để trống nếu không đổi)</label><input type="text" id="ua_pass" style="width:100%" placeholder="••••••••">
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveAdminAccount()">Cập nhật</button></div>`);
+};
+window.saveAdminAccount=()=>{
+  const u=users.find(x=>x.role==='admin');
+  const username=document.getElementById('ua_user').value.trim();
+  if(!username){toast('⚠️ Tên đăng nhập không được để trống');return;}
+  if(users.some(x=>x.username===username && x!==u)){toast('⚠️ Tên đăng nhập đã tồn tại');return;}
+  u.username=username;
+  const pass=document.getElementById('ua_pass').value;
+  if(pass) u.password=pass;
+  closeModal(); toast('✅ Đã cập nhật tài khoản Admin'); renderSection('taikhoan');
+};
+window.editStaffAccount=(staffId)=>{
+  const s=state.staff.find(x=>x.id===staffId);
+  const u=users.find(x=>x.staffId===staffId);
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>🔑 Đổi tài khoản — ${s.name}</h3>
+  <label class="f">Tên đăng nhập</label><input type="text" id="us_user" style="width:100%" value="${u.username}">
+  <label class="f" style="margin-top:10px;">Mật khẩu mới (để trống nếu không đổi)</label><input type="text" id="us_pass" style="width:100%" placeholder="••••••••">
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveStaffAccount(${staffId})">Cập nhật</button></div>`);
+};
+window.saveStaffAccount=(staffId)=>{
+  const s=state.staff.find(x=>x.id===staffId);
+  const u=users.find(x=>x.staffId===staffId);
+  const username=document.getElementById('us_user').value.trim();
+  if(!username){toast('⚠️ Tên đăng nhập không được để trống');return;}
+  if(users.some(x=>x.username===username && x!==u)){toast('⚠️ Tên đăng nhập đã tồn tại');return;}
+  u.username=username; s.username=username;
+  const pass=document.getElementById('us_pass').value;
+  if(pass) u.password=pass;
+  closeModal(); toast('✅ Đã cập nhật tài khoản của '+s.name); renderSection('taikhoan');
+};
+window.createStaffAccount=(staffId)=>{
+  const s=state.staff.find(x=>x.id===staffId);
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>+ Tạo tài khoản — ${s.name}</h3>
+  <label class="f">Tên đăng nhập</label><input type="text" id="nc_user" style="width:100%">
+  <label class="f" style="margin-top:10px;">Mật khẩu</label><input type="text" id="nc_pass" style="width:100%" value="123456">
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveNewStaffAccount(${staffId})">Tạo tài khoản</button></div>`);
+};
+window.saveNewStaffAccount=(staffId)=>{
+  const s=state.staff.find(x=>x.id===staffId);
+  const username=document.getElementById('nc_user').value.trim();
+  if(!username){toast('⚠️ Nhập tên đăng nhập');return;}
+  if(users.some(u=>u.username===username)){toast('⚠️ Tên đăng nhập đã tồn tại');return;}
+  users.push({username,password:document.getElementById('nc_pass').value||'123456',role:'staff',name:s.name,staffId});
+  s.username=username;
+  closeModal(); toast('✅ Đã tạo tài khoản cho '+s.name); renderSection('taikhoan');
 };
 
 /* ============================= ROUTER ============================= */
