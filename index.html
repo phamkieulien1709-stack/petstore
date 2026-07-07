@@ -65,6 +65,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);-webki
 .foot-role{font-size:11px;color:var(--sidebar-text);}
 .logout-btn{margin-left:auto;background:none;border:none;color:var(--sidebar-text);cursor:pointer;font-size:15px;}
 .logout-btn:hover{color:#fff;}
+.menu-toggle{display:none;width:38px;height:38px;border-radius:10px;background:#fff;border:1px solid var(--line);align-items:center;justify-content:center;font-size:18px;cursor:pointer;flex:none;}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(10,20,18,.45);z-index:39;}
+.sidebar-overlay.show{display:block;}
 
 .main{flex:1;min-width:0;}
 .topbar{position:sticky;top:0;z-index:5;background:rgba(244,246,240,.92);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--line);}
@@ -187,6 +190,83 @@ a.linklike:hover{text-decoration:underline;}
 
 ::-webkit-scrollbar{width:9px;height:9px;}
 ::-webkit-scrollbar-thumb{background:#D6DACC;border-radius:8px;}
+
+/* ============================= RESPONSIVE / MOBILE ============================= */
+@media (max-width: 860px){
+  .login-card{padding:26px 22px;border-radius:18px;}
+
+  .menu-toggle{display:flex;}
+  .sidebar{
+    position:fixed;top:0;left:0;height:100vh;width:82vw;max-width:300px;
+    z-index:40;transform:translateX(-100%);transition:transform .25s ease;
+    box-shadow:0 0 40px rgba(0,0,0,.35);
+  }
+  .sidebar.open{transform:translateX(0);}
+  .main{width:100%;min-width:0;}
+
+  .topbar{padding:12px 14px;gap:8px;}
+  .page-title{font-size:16.5px;}
+  .page-sub{display:none;}
+  #whoami{display:none;}
+  .content{padding:14px 14px 70px;}
+
+  h2.h{font-size:15.5px;margin:20px 0 10px;}
+
+  .grid.cols-4,.grid.cols-3,.grid.cols-2{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .kpi{padding:14px;}
+  .kpi .val{font-size:17px;}
+  .kpi .lbl{font-size:11px;}
+
+  .card{padding:14px;border-radius:12px;}
+
+  .formgrid{grid-template-columns:1fr;gap:10px;}
+  .field.full{grid-column:auto;}
+
+  .prodcards{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .pcard .thumb{height:88px;font-size:28px;}
+  .pcard .actrow{flex-wrap:wrap;}
+
+  .rooms{grid-template-columns:repeat(3,1fr);gap:8px;}
+  .room{padding:9px 7px;}
+
+  .kanban{grid-template-columns:repeat(4,80vw);gap:10px;}
+  .kcol{min-height:100px;}
+
+  .pos-grid{grid-template-columns:1fr;}
+
+  .notes-grid{grid-template-columns:repeat(2,1fr);}
+
+  .toolbar{flex-direction:column;align-items:stretch;gap:10px;}
+  .toolbar .btn, .toolbar .search{width:100%;justify-content:center;}
+  .toolbar > div.small.muted{order:2;}
+
+  table{font-size:12px;}
+  th{font-size:10px;padding:8px 8px;}
+  td{padding:8px 8px;}
+  .tblwrap{border-radius:12px;}
+
+  .btn{padding:10px 14px;font-size:13px;}
+  .btn.sm{padding:7px 10px;font-size:12px;}
+
+  .modal-bg{align-items:flex-end;padding:0;}
+  .modal{max-width:100%;width:100%;border-radius:18px 18px 0 0;max-height:90vh;padding:20px 18px 24px;}
+
+  .photorow{flex-direction:row;}
+  .photobox{height:70px;}
+
+  /* Prevent iOS auto-zoom on focus */
+  input,select,textarea{font-size:16px;}
+  .btn{font-size:14px;}
+  .pill{font-size:11px;}
+}
+
+@media (max-width: 420px){
+  .grid.cols-4,.grid.cols-3,.grid.cols-2{grid-template-columns:1fr;}
+  .prodcards{grid-template-columns:1fr;}
+  .notes-grid{grid-template-columns:1fr;}
+  .rooms{grid-template-columns:repeat(2,1fr);}
+  .kanban{grid-template-columns:repeat(4,86vw);}
+}
 </style>
 </head>
 <body>
@@ -216,12 +296,16 @@ a.linklike:hover{text-decoration:underline;}
 
 <!-- ============= APP SHELL ============= -->
 <div class="app hidden" id="appShell">
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
   <div class="sidebar" id="sidebar"></div>
   <div class="main">
     <div class="topbar">
-      <div>
-        <div class="page-title" id="pageTitle">Dashboard</div>
-        <div class="page-sub" id="pageSub"></div>
+      <div class="flex gap8 center">
+        <button class="menu-toggle" id="menuToggle" aria-label="Mở menu">☰</button>
+        <div>
+          <div class="page-title" id="pageTitle">Dashboard</div>
+          <div class="page-sub" id="pageSub"></div>
+        </div>
       </div>
       <div class="flex gap8 center">
         <span class="small muted" id="whoami"></span>
@@ -263,6 +347,11 @@ window.doLogout=()=>{
   document.getElementById('loginUser').value=''; document.getElementById('loginPass').value='';
 };
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('menuToggle').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('show');
+});
+document.getElementById('sidebarOverlay').addEventListener('click', closeSidebarDrawer);
 
 /* ============================= APP DATA ============================= */
 const TODAY='2026-07-05';
@@ -389,6 +478,10 @@ function renderSidebar(active){
   sb.querySelectorAll('[data-nav]').forEach(el=>el.addEventListener('click',()=>goTo(el.dataset.nav)));
 }
 let currentSection='dashboard';
+function closeSidebarDrawer(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+}
 function goTo(id){
   const allowed = NAV_ALL.find(n=>n.id===id);
   if(allowed && allowed.adminOnly && currentUser.role!=='admin'){toast('⛔ Bạn không có quyền truy cập mục này');return;}
@@ -398,6 +491,7 @@ function goTo(id){
   document.getElementById('pageSub').textContent=TITLES[id][1];
   renderSidebar(id);
   renderSection(id);
+  closeSidebarDrawer();
 }
 
 /* ============================= HELPERS ============================= */
