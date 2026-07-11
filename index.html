@@ -136,6 +136,13 @@ label.f{font-size:11.5px;font-weight:600;color:var(--ink-soft);display:block;mar
 .field{margin-bottom:2px;}
 .field.full{grid-column:1/-1;}
 
+/* wizard tabs (Thêm mới dịch vụ / Thêm mới hàng hóa) */
+.wiztabs{display:flex;gap:6px;background:#F0F3EB;border-radius:10px;padding:4px;margin-bottom:16px;}
+.wiztab-btn{flex:1;text-align:center;padding:9px 10px;border-radius:8px;font-family:'Inter';font-weight:700;font-size:12.5px;color:var(--ink-soft);cursor:pointer;border:none;background:transparent;transition:background .15s,color .15s;}
+.wiztab-btn.active{background:#fff;color:var(--accent-ink);box-shadow:var(--shadow);}
+.wiztab-pane{display:none;}
+.wiztab-pane.active{display:block;animation:fade .2s ease;}
+
 #toast{position:fixed;bottom:22px;right:22px;background:var(--sidebar);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 10px 30px -8px rgba(0,0,0,.4);opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;z-index:99;}
 #toast.show{opacity:1;transform:none;}
 
@@ -356,6 +363,61 @@ document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar
 /* ============================= APP DATA ============================= */
 const TODAY='2026-07-05';
 
+/* ---- Bảng giá theo Combo dịch vụ Spa/Grooming (theo bảng giá cửa hàng) ----
+   Mỗi combo có bảng giá riêng theo Loại thú (Chó/Mèo) và mốc cân nặng
+   (riêng Combo Nhuộm Lông tính theo bộ phận, chỉ áp dụng cho Chó).
+   Combo "Khách sạn / Ngày" dùng chung cơ chế này để module Quản lý Khách sạn và
+   trang Quản lý dịch vụ tự động đồng bộ — sửa giá ở Quản lý dịch vụ là áp dụng ngay. */
+const COMBO_GROUPS = [
+  {key:'tam_thuong',       label:'Combo Tắm Thường',            byPart:false},
+  {key:'tam_toandien',     label:'Combo Tắm Toàn Diện',         byPart:false},
+  {key:'cao',              label:'Combo Cạo',                   byPart:false},
+  {key:'cattia_toandien',  label:'Combo Cắt Tỉa Toàn Diện',     byPart:false},
+  {key:'nhuom_long',       label:'Combo Nhuộm Lông',            byPart:true},
+  {key:'khach_san',        label:'Khách sạn / Ngày',            byPart:false},
+];
+const COMBO_PRICING = {
+  tam_thuong:{
+    'Chó':[{tier:'Dưới 3 KG',price:60000},{tier:'3 - 5 KG',price:90000},{tier:'5 - 7 KG',price:120000},{tier:'7 - 10 KG',price:150000},{tier:'10 - 15 KG',price:190000}],
+    'Mèo':[{tier:'Dưới 3 KG',price:90000},{tier:'3 - 5 KG',price:130000},{tier:'5 - 7 KG',price:170000},{tier:'7 - 10 KG',price:200000}],
+  },
+  tam_toandien:{
+    'Chó':[{tier:'Dưới 3 KG',price:90000},{tier:'3 - 5 KG',price:120000},{tier:'5 - 7 KG',price:160000},{tier:'7 - 10 KG',price:200000},{tier:'10 - 15 KG',price:250000}],
+    'Mèo':[{tier:'Dưới 3 KG',price:150000},{tier:'3 - 5 KG',price:180000},{tier:'5 - 7 KG',price:250000},{tier:'7 - 10 KG',price:300000}],
+  },
+  cao:{
+    'Chó':[{tier:'Dưới 3 KG',price:150000},{tier:'3 - 5 KG',price:190000},{tier:'5 - 7 KG',price:230000},{tier:'7 - 10 KG',price:270000},{tier:'10 - 15 KG',price:300000}],
+    'Mèo':[{tier:'Dưới 3 KG',price:180000},{tier:'3 - 5 KG',price:230000},{tier:'5 - 7 KG',price:280000},{tier:'7 - 10 KG',price:310000}],
+  },
+  cattia_toandien:{
+    'Chó':[{tier:'Dưới 3 KG',price:200000},{tier:'3 - 5 KG',price:250000},{tier:'5 - 7 KG',price:280000},{tier:'7 - 10 KG',price:330000},{tier:'10 - 15 KG',price:390000}],
+    'Mèo':[{tier:'Dưới 3 KG',price:200000},{tier:'3 - 5 KG',price:280000},{tier:'5 - 7 KG',price:310000},{tier:'7 - 10 KG',price:350000}],
+  },
+  nhuom_long:{
+    'Chó':[{tier:'Tai',price:190000},{tier:'Đuôi',price:200000},{tier:'4 Chân',price:250000},{tier:'Tai + Đuôi',price:300000},{tier:'Tai + 4 Chân',price:300000},{tier:'Toàn thân',price:450000}],
+  },
+  khach_san:{
+    'Chó':[{tier:'Dưới 5 KG',price:119000},{tier:'5 - 9 KG',price:149000},{tier:'10 - 15 KG',price:199000}],
+    'Mèo':[{tier:'Không phân biệt cân nặng',price:120000}],
+  },
+};
+function comboPetTypes(groupKey){ return Object.keys(COMBO_PRICING[groupKey]||{}); }
+function comboTiers(groupKey,petType){ return (COMBO_PRICING[groupKey]||{})[petType]||[]; }
+function buildComboServices(){
+  const list=[]; let id=1;
+  COMBO_GROUPS.forEach(g=>{
+    comboPetTypes(g.key).forEach(petType=>{
+      comboTiers(g.key,petType).forEach(t=>{
+        list.push({
+          id:id++, name:`${g.label} — ${petType} — ${t.tier}`, price:t.price, used:0, commissionRate:g.key==='khach_san'?8:10, staffRates:{},
+          comboGroup:g.key, petType, tier:t.tier,
+        });
+      });
+    });
+  });
+  return list;
+}
+
 const state = {
   branches:[
     {id:1,name:'Quận 1',address:'12 Nguyễn Trãi, Phường Bến Thành, TP.HCM'},
@@ -367,15 +429,10 @@ const state = {
     {id:3,name:'Vũ Thị Hà',position:'Hotel & Spa',branch:'Quận 1',baseSalary:7000000,phone:'0909 333 444',username:''},
     {id:4,name:'Lâm Bảo Ngọc',position:'Bán hàng',branch:'Quận 7',baseSalary:6800000,phone:'0909 444 555',username:''},
   ],
-  services:[
-    {id:1,name:'Tắm cơ bản',price:150000,used:132,commissionRate:10,staffRates:{}},
-    {id:2,name:'Tắm + Cắt tỉa',price:280000,used:98,commissionRate:10,staffRates:{}},
-    {id:3,name:'Khách sạn / ngày',price:300000,used:210,commissionRate:8,staffRates:{}},
-    {id:4,name:'Cắt móng + vệ sinh tai',price:80000,used:150,commissionRate:10,staffRates:{}},
-  ],
+  services: buildComboServices(),
   orders:[
     {id:1,service:'Tắm + Cắt tỉa',price:280000,branch:'Quận 1',customer:'Nguyễn Thị Lan Anh',date:'2026-07-05',status:'Hoàn thành',staff:'Nguyễn Thị Thảo',type:'dichvu',refName:'Tắm + Cắt tỉa',originalPrice:280000,discountAmount:0,discountPercent:0},
-    {id:2,service:'Khách sạn / ngày',price:300000,branch:'Quận 7',customer:'Lê Hoài Thương',date:'2026-07-04',status:'Đang xử lý',staff:'Vũ Thị Hà',type:'dichvu',refName:'Khách sạn / ngày',originalPrice:300000,discountAmount:0,discountPercent:0},
+    {id:2,service:'Khách sạn / Ngày — Chó — Dưới 5 KG',price:714000,branch:'Quận 1',customer:'Nguyễn Thị Lan Anh',date:'2026-06-25',status:'Hoàn thành',staff:'Vũ Thị Hà',type:'dichvu',refName:'Khách sạn / Ngày — Chó — Dưới 5 KG',originalPrice:714000,discountAmount:0,discountPercent:0},
     {id:3,service:'Tắm cơ bản',price:150000,branch:'Quận 1',customer:'Phạm Minh Châu',date:'2026-06-28',status:'Hoàn thành',staff:'Nguyễn Thị Thảo',type:'dichvu',refName:'Tắm cơ bản',originalPrice:150000,discountAmount:0,discountPercent:0},
     {id:4,service:'Cắt móng + vệ sinh tai',price:80000,branch:'Quận 7',customer:'Trần Văn Hùng',date:'2026-06-20',status:'Hoàn thành',staff:'Đặng Văn Minh',type:'dichvu',refName:'Cắt móng + vệ sinh tai',originalPrice:80000,discountAmount:0,discountPercent:0},
     {id:5,service:'Tắm + Cắt tỉa',price:280000,branch:'Quận 1',customer:'Lê Hoài Thương',date:'2026-06-15',status:'Đã huỷ',staff:'',type:'dichvu',refName:'Tắm + Cắt tỉa',originalPrice:280000,discountAmount:0,discountPercent:0},
@@ -386,6 +443,11 @@ const state = {
     {id:2,warehouseId:5,sellPrice:85000,commissionRate:5,staffRates:{}},
     {id:3,warehouseId:6,sellPrice:45000,commissionRate:5,staffRates:{}},
     {id:4,warehouseId:7,sellPrice:95000,commissionRate:5,staffRates:{}},
+    {id:5,warehouseId:8,sellPrice:50000,commissionRate:5,staffRates:{}},
+    {id:6,warehouseId:9,sellPrice:10000,commissionRate:5,staffRates:{}},
+    {id:7,warehouseId:10,sellPrice:50000,commissionRate:5,staffRates:{}},
+    {id:8,warehouseId:11,sellPrice:70000,commissionRate:5,staffRates:{}},
+    {id:9,warehouseId:12,sellPrice:50000,commissionRate:5,staffRates:{}},
   ],
   warehouse:[
     {id:1,category:'Nguyên liệu spa',name:'Sữa tắm chuyên dụng',costPrice:95000,stock:20,image:''},
@@ -395,6 +457,11 @@ const state = {
     {id:5,category:'Phụ kiện',name:'Vòng cổ chống ve',costPrice:55000,stock:9,image:''},
     {id:6,category:'Đồ chơi',name:'Bóng cao su gặm',costPrice:25000,stock:30,image:''},
     {id:7,category:'Thức ăn',name:'Pate gà Ciao',costPrice:60000,stock:22,image:''},
+    {id:8,category:'Đồ ăn vặt sấy',name:'Mề gà sấy (100g)',costPrice:35000,stock:25,image:''},
+    {id:9,category:'Đồ ăn vặt sấy',name:'Cổ gà sấy (1 cái)',costPrice:6000,stock:40,image:''},
+    {id:10,category:'Đồ ăn vặt sấy',name:'Gà cuộn rau củ sấy (70g)',costPrice:35000,stock:25,image:''},
+    {id:11,category:'Đồ ăn vặt sấy',name:'Gà sấy (70g)',costPrice:48000,stock:25,image:''},
+    {id:12,category:'Đồ ăn vặt sấy',name:'Gan, phổi heo sấy (100g)',costPrice:35000,stock:25,image:''},
   ],
   customers:[
     {id:1,name:'Nguyễn Thị Lan Anh',phone:'0901 234 567',address:'12 Nguyễn Trãi, Q.1',email:'lananh@gmail.com',tier:'Gold',points:180,
@@ -422,6 +489,10 @@ const state = {
     {id:3,petId:5,service:'Cắt tỉa toàn thân',status:'Cắt',staff:{'Chờ':'Vũ Thị Hà','Tắm':'Nguyễn Thị Thảo','Cắt':'Nguyễn Thị Thảo','Hoàn thiện':''},before:'',after:'',date:'2026-07-05',orderId:null,completedDate:null},
     {id:4,petId:4,service:'Cắt móng',status:'Hoàn thiện',staff:{'Chờ':'Vũ Thị Hà','Tắm':'','Cắt':'Đặng Văn Minh','Hoàn thiện':'Đặng Văn Minh'},before:'',after:'',date:'2026-07-03',orderId:4,completedDate:'2026-07-03'},
   ],
+  hotelStays:[
+    {id:1,petId:5,checkIn:'2026-07-04',checkOut:null,pricePerDay:199000,petType:'Chó',tier:'10 - 15 KG',branch:'Quận 7',notes:'Ăn 2 bữa/ngày, mang theo pate riêng',paid:0,discountAmount:0,discountPercent:0,orderId:null,status:'Đang lưu trú',staff:'Vũ Thị Hà'},
+    {id:2,petId:2,checkIn:'2026-06-20',checkOut:'2026-06-25',pricePerDay:119000,petType:'Chó',tier:'Dưới 5 KG',branch:'Quận 1',notes:'',paid:714000,discountAmount:0,discountPercent:0,orderId:2,status:'Đã trả',staff:'Vũ Thị Hà'},
+  ],
   expenses:[
     {id:1,type:'Thuê mặt bằng',amount:12000000,branch:'Quận 1',date:'2026-07-01'},
     {id:2,type:'Điện nước',amount:2800000,branch:'Quận 1',date:'2026-07-01'},
@@ -447,6 +518,7 @@ const NAV_ALL=[
  {id:'khachhang',label:'Quản lý khách hàng',icon:'👤',adminOnly:true},
  {id:'pet',      label:'Quản lý Pet',icon:'🐾',adminOnly:true},
  {id:'spa',      label:'Quản lý Spa',icon:'🛁',adminOnly:true},
+ {id:'khachsan', label:'Quản lý Khách sạn',icon:'🏨',adminOnly:true},
 ];
 const TITLES={
  phucvukh:['Phục vụ khách hàng','Tiếp nhận khách mới, tạo đơn & bắt đầu dịch vụ'],
@@ -463,6 +535,7 @@ const TITLES={
  khachhang:['Quản lý khách hàng','Hồ sơ, lịch hẹn, lịch sử & hạng điểm'],
  pet:['Quản lý Pet','Hồ sơ thú cưng gắn với khách hàng'],
  spa:['Quản lý Spa','Theo dõi tiến trình chăm sóc theo thời gian thực'],
+ khachsan:['Quản lý Khách sạn','Theo dõi thú cưng đang ký gửi, lịch sử lưu trú & chi phí đã thanh toán'],
 };
 
 function renderSidebar(active){
@@ -620,180 +693,219 @@ window.releaseSpaJob=(id)=>{
   renderSection(currentSection);
 };
 
-function buildIntakeFormHtml(){
-  const myBranch = (state.staff.find(s=>s.id===currentUser.staffId)||{}).branch || branchNames()[0];
+/* ---- Modal "Thêm mới": 2 tab riêng biệt — Thêm mới dịch vụ / Thêm mới hàng hóa ---- */
+function buildWizardHtml(){
   return `<button class="modal-close" onclick="closeModal()">✕</button>
-  <h3>🙋 Thêm đơn phục vụ mới</h3>
+  <h3>🙋 Thêm mới cho khách hàng</h3>
+  <div class="wiztabs">
+    <button type="button" class="wiztab-btn" id="wiztabbtn_dichvu" onclick="switchWizTab('dichvu')">🧴 Thêm mới dịch vụ</button>
+    <button type="button" class="wiztab-btn" id="wiztabbtn_hanghoa" onclick="switchWizTab('hanghoa')">📦 Thêm mới hàng hóa</button>
+  </div>
+  <div class="wiztab-pane" id="wiztabpane_dichvu">${buildServiceTabHtml()}</div>
+  <div class="wiztab-pane" id="wiztabpane_hanghoa">${buildGoodsTabHtml()}</div>`;
+}
+window.switchWizTab=(tab)=>{
+  ['dichvu','hanghoa'].forEach(t=>{
+    document.getElementById('wiztabbtn_'+t).classList.toggle('active',t===tab);
+    document.getElementById('wiztabpane_'+t).classList.toggle('active',t===tab);
+  });
+};
 
+/* ============ TAB 1: THÊM MỚI DỊCH VỤ ============ */
+function buildServiceTabHtml(){
+  const myBranch = (state.staff.find(s=>s.id===currentUser.staffId)||{}).branch || branchNames()[0];
+  return `
   <b>Khách hàng</b>
   <div class="flex gap8" style="margin:10px 0;">
-    <label class="small"><input type="radio" name="custMode" value="existing" checked onchange="toggleCustMode('existing')"> Khách đã có</label>
-    <label class="small"><input type="radio" name="custMode" value="new" onchange="toggleCustMode('new')"> Khách mới</label>
+    <label class="small"><input type="radio" name="svcCustMode" value="existing" checked onchange="toggleSvcCustMode('existing')"> Khách đã có</label>
+    <label class="small"><input type="radio" name="svcCustMode" value="new" onchange="toggleSvcCustMode('new')"> Khách mới</label>
   </div>
-  <div id="custExistingWrap">
-    <select id="wiz_cust_select" style="width:100%" onchange="populatePetSelect()">
+  <div id="svcCustExistingWrap">
+    <select id="svc_cust_select" style="width:100%" onchange="populateSvcPetSelect()">
       ${state.customers.map(c=>`<option value="${c.id}">${c.name} · ${c.phone}</option>`).join('')}
     </select>
   </div>
-  <div id="custNewWrap" class="hidden">
+  <div id="svcCustNewWrap" class="hidden">
     <div class="formgrid">
-      <div class="field"><label class="f">Họ tên</label><input type="text" id="wiz_cust_name" style="width:100%"></div>
-      <div class="field"><label class="f">SĐT</label><input type="tel" id="wiz_cust_phone" style="width:100%"></div>
+      <div class="field"><label class="f">Họ tên</label><input type="text" id="svc_cust_name" style="width:100%"></div>
+      <div class="field"><label class="f">SĐT</label><input type="tel" id="svc_cust_phone" style="width:100%"></div>
     </div>
   </div>
 
   <div class="divider"></div>
   <b>Thú cưng</b>
-  <div id="petExistingWrap" style="margin-top:10px;">
-    <select id="wiz_pet_select" style="width:100%" onchange="togglePetNew()"></select>
+  <div id="svcPetExistingWrap" style="margin-top:10px;">
+    <select id="svc_pet_select" style="width:100%" onchange="toggleSvcPetNew()"></select>
   </div>
-  <div id="petNewWrap" class="hidden" style="margin-top:10px;">
+  <div id="svcPetNewWrap" class="hidden" style="margin-top:10px;">
     <div class="formgrid">
-      <div class="field"><label class="f">Tên thú cưng</label><input type="text" id="wiz_pet_name" style="width:100%"></div>
-      <div class="field"><label class="f">Giống</label><input type="text" id="wiz_pet_breed" style="width:100%"></div>
+      <div class="field"><label class="f">Tên thú cưng</label><input type="text" id="svc_pet_name" style="width:100%"></div>
+      <div class="field"><label class="f">Giống</label><input type="text" id="svc_pet_breed" style="width:100%"></div>
     </div>
   </div>
 
   <div class="divider"></div>
-  <b>Dịch vụ & hàng hóa</b>
-  <label class="f" style="margin-top:10px;">Dịch vụ chính</label>
-  <select id="wiz_service" style="width:100%" onchange="onWizServiceChange()">${state.services.map(s=>`<option value="${s.id}">${s.name} — ${vnd(s.price)}</option>`).join('')}</select>
+  <b>Dịch vụ Spa / Grooming</b>
+  <label class="f" style="margin-top:10px;">🔎 Tìm nhanh dịch vụ (gõ tên để tìm)</label>
+  <input type="text" id="svc_quick_search" list="svc_datalist" placeholder="VD: Tắm thường, Cạo, Chó, 3 - 5 KG..." style="width:100%" oninput="onSvcQuickSearch(this.value)">
+  <datalist id="svc_datalist">${state.services.filter(s=>s.comboGroup && s.comboGroup!=='khach_san').map(s=>`<option value="${s.name}">`).join('')}</datalist>
+  <div class="small muted" id="svc_quick_hint" style="margin-top:4px;">Gõ để lọc trong danh sách gợi ý, hoặc chọn thủ công theo Loại combo / Loại thú / Mốc cân nặng bên dưới.</div>
+
+  <label class="f" style="margin-top:10px;">Loại combo</label>
+  <select id="svc_combo_group" style="width:100%" onchange="onSvcComboGroupChange()">
+    ${COMBO_GROUPS.filter(g=>g.key!=='khach_san').map(g=>`<option value="${g.key}">${g.label}</option>`).join('')}
+  </select>
+  <div class="formgrid" style="margin-top:10px;">
+    <div class="field"><label class="f">Loại thú cưng</label><select id="svc_pet_type" style="width:100%" onchange="onSvcPetTypeChange()"></select></div>
+    <div class="field"><label class="f" id="svc_tier_label">Mốc cân nặng</label><select id="svc_tier" style="width:100%" onchange="onSvcTierChange()"></select></div>
+  </div>
   <label class="f" style="margin-top:10px;">Cơ sở áp dụng</label>
-  <select id="wiz_branch" style="width:100%">${branchNames().map(b=>`<option ${b===myBranch?'selected':''}>${b}</option>`).join('')}</select>
+  <select id="svc_branch" style="width:100%">${branchNames().map(b=>`<option ${b===myBranch?'selected':''}>${b}</option>`).join('')}</select>
 
   <div class="formgrid" style="margin-top:10px;">
-    <div class="field"><label class="f">Chiết khấu (%)</label><input type="number" id="wiz_disc_percent" value="0" min="0" max="100" style="width:100%" oninput="discPercentChange(this)"></div>
-    <div class="field"><label class="f">Chiết khấu (số tiền)</label><input type="number" id="wiz_disc_amount" value="0" min="0" style="width:100%" oninput="discAmountChange(this)"></div>
+    <div class="field"><label class="f">Chiết khấu (%)</label><input type="number" id="svc_disc_percent" value="0" min="0" max="100" style="width:100%" oninput="svcDiscPercentChange(this)"></div>
+    <div class="field"><label class="f">Chiết khấu (số tiền)</label><input type="number" id="svc_disc_amount" value="0" min="0" style="width:100%" oninput="svcDiscAmountChange(this)"></div>
   </div>
-  <div class="small muted" id="wiz_price_preview" style="margin-top:6px;"></div>
-
-  <label class="f" style="margin-top:10px;">Hàng hóa mua kèm (nếu có)</label>
-  <div style="max-height:130px;overflow-y:auto;">
-    ${state.retail.map(r=>{const rv=retailView(r); return `<div class="flex between center" style="padding:5px 0;">
-      <span class="small">${rv.name} <span class="muted">(${vnd(rv.sellPrice)} · tồn ${rv.stock})</span></span>
-      <input type="number" min="0" max="${rv.stock}" value="0" id="goods_qty_${r.id}" style="width:56px;text-align:center;">
-    </div>`;}).join('')}
-  </div>
+  <div class="small muted" id="svc_price_preview" style="margin-top:6px;"></div>
 
   <div class="divider"></div>
   <b>Ảnh trước khi thực hiện dịch vụ</b>
-  <div class="photobox" style="height:110px;margin-top:10px;" id="wiz_photo_box">
+  <div class="photobox" style="height:110px;margin-top:10px;" id="svc_photo_box">
     Bấm để tải ảnh trước
-    <input type="file" accept="image/*" onchange="wizPhotoChange(this)">
+    <input type="file" accept="image/*" onchange="svcPhotoChange(this)">
   </div>
 
-  <div style="margin-top:18px;text-align:right;"><button class="btn primary" onclick="submitPhucVu()">🚀 Bắt đầu phục vụ</button></div>`;
+  <div style="margin-top:18px;text-align:right;"><button class="btn primary" onclick="submitService()">🚀 Bắt đầu phục vụ</button></div>`;
 }
-function currentWizPrice(){
-  const svc=state.services.find(s=>s.id===+document.getElementById('wiz_service').value);
-  return svc?svc.price:0;
+function svcSelectedService(){
+  const groupEl=document.getElementById('svc_combo_group');
+  const petTypeEl=document.getElementById('svc_pet_type');
+  const tierEl=document.getElementById('svc_tier');
+  if(!groupEl||!petTypeEl||!tierEl) return null;
+  return state.services.find(s=>s.comboGroup===groupEl.value && s.petType===petTypeEl.value && s.tier===tierEl.value);
 }
-window.onWizServiceChange=()=>{
-  const pct=+document.getElementById('wiz_disc_percent').value||0;
-  const amt=Math.round(currentWizPrice()*pct/100);
-  document.getElementById('wiz_disc_amount').value=amt;
-  updateWizPricePreview();
+window.onSvcQuickSearch=(val)=>{
+  const svc=state.services.find(s=>s.comboGroup && s.comboGroup!=='khach_san' && s.name===val);
+  const hint=document.getElementById('svc_quick_hint');
+  if(!svc){
+    hint.textContent = val ? '⚠️ Chưa khớp dịch vụ nào — gõ tiếp hoặc chọn thủ công bên dưới.' : 'Gõ để lọc trong danh sách gợi ý, hoặc chọn thủ công theo Loại combo / Loại thú / Mốc cân nặng bên dưới.';
+    return;
+  }
+  document.getElementById('svc_combo_group').value=svc.comboGroup;
+  onSvcComboGroupChange();
+  document.getElementById('svc_pet_type').value=svc.petType;
+  onSvcPetTypeChange();
+  document.getElementById('svc_tier').value=svc.tier;
+  onSvcTierChange();
+  hint.innerHTML=`✅ Đã chọn: <b>${svc.name}</b> — ${vnd(svc.price)}`;
 };
-window.discPercentChange=(el)=>{
-  const price=currentWizPrice();
+window.onSvcComboGroupChange=()=>{
+  const group=document.getElementById('svc_combo_group').value;
+  const petTypeSel=document.getElementById('svc_pet_type');
+  const types=comboPetTypes(group);
+  petTypeSel.innerHTML=types.map(t=>`<option value="${t}">${t}</option>`).join('');
+  document.getElementById('svc_tier_label').textContent = (COMBO_GROUPS.find(g=>g.key===group)||{}).byPart ? 'Bộ phận' : 'Mốc cân nặng';
+  onSvcPetTypeChange();
+};
+window.onSvcPetTypeChange=()=>{
+  const group=document.getElementById('svc_combo_group').value;
+  const petType=document.getElementById('svc_pet_type').value;
+  const tierSel=document.getElementById('svc_tier');
+  const tiers=comboTiers(group,petType);
+  tierSel.innerHTML=tiers.map(t=>`<option value="${t.tier}">${t.tier} — ${vnd(t.price)}</option>`).join('');
+  onSvcTierChange();
+};
+window.onSvcTierChange=()=>{
+  const svc=svcSelectedService();
+  const pct=+document.getElementById('svc_disc_percent').value||0;
+  const amt=Math.round((svc?svc.price:0)*pct/100);
+  document.getElementById('svc_disc_amount').value=amt;
+  updateSvcPricePreview();
+};
+window.svcDiscPercentChange=(el)=>{
+  const svc=svcSelectedService(); const price=svc?svc.price:0;
   const pct=Math.min(100,Math.max(0,+el.value||0));
   const amt=Math.round(price*pct/100);
-  document.getElementById('wiz_disc_amount').value=amt;
-  updateWizPricePreview();
+  document.getElementById('svc_disc_amount').value=amt;
+  updateSvcPricePreview();
 };
-window.discAmountChange=(el)=>{
-  const price=currentWizPrice();
+window.svcDiscAmountChange=(el)=>{
+  const svc=svcSelectedService(); const price=svc?svc.price:0;
   const amt=Math.max(0,+el.value||0);
   const pct = price? +(Math.min(amt,price)/price*100).toFixed(1) : 0;
-  document.getElementById('wiz_disc_percent').value=pct;
-  updateWizPricePreview();
+  document.getElementById('svc_disc_percent').value=pct;
+  updateSvcPricePreview();
 };
-function updateWizPricePreview(){
-  const price=currentWizPrice();
-  const amt=+document.getElementById('wiz_disc_amount').value||0;
+function updateSvcPricePreview(){
+  const svc=svcSelectedService();
+  const price=svc?svc.price:0;
+  const amt=+document.getElementById('svc_disc_amount').value||0;
   const final=Math.max(0,price-amt);
-  document.getElementById('wiz_price_preview').innerHTML=`Giá dịch vụ: <b>${vnd(price)}</b> → Sau chiết khấu: <b>${vnd(final)}</b>`;
+  document.getElementById('svc_price_preview').innerHTML = svc
+    ? `Combo: <b>${svc.petType} · ${svc.tier}</b><br>Giá: <b>${vnd(price)}</b> → Sau chiết khấu: <b>${vnd(final)}</b>`
+    : 'Chưa có combo phù hợp.';
 }
-window.openAddOrderWizard=()=>{
-  wizPhoto='';
-  openModal(buildIntakeFormHtml());
-  populatePetSelect();
-  updateWizPricePreview();
-};
-window.toggleCustMode=(mode)=>{
-  document.getElementById('custExistingWrap').classList.toggle('hidden',mode==='new');
-  document.getElementById('custNewWrap').classList.toggle('hidden',mode!=='new');
+window.toggleSvcCustMode=(mode)=>{
+  document.getElementById('svcCustExistingWrap').classList.toggle('hidden',mode==='new');
+  document.getElementById('svcCustNewWrap').classList.toggle('hidden',mode!=='new');
   if(mode==='new'){
-    document.getElementById('petExistingWrap').classList.add('hidden');
-    document.getElementById('petNewWrap').classList.remove('hidden');
+    document.getElementById('svcPetExistingWrap').classList.add('hidden');
+    document.getElementById('svcPetNewWrap').classList.remove('hidden');
   } else {
-    document.getElementById('petExistingWrap').classList.remove('hidden');
-    populatePetSelect();
+    document.getElementById('svcPetExistingWrap').classList.remove('hidden');
+    populateSvcPetSelect();
   }
 };
-window.populatePetSelect=()=>{
-  const sel=document.getElementById('wiz_pet_select');
-  const custId=+document.getElementById('wiz_cust_select').value;
+window.populateSvcPetSelect=()=>{
+  const sel=document.getElementById('svc_pet_select');
+  const custId=+document.getElementById('svc_cust_select').value;
   const myPets=state.pets.filter(p=>p.ownerId===custId);
   sel.innerHTML = myPets.map(p=>`<option value="${p.id}">${p.name} (${p.breed})</option>`).join('') + `<option value="__new__">+ Thú cưng mới...</option>`;
-  togglePetNew();
+  toggleSvcPetNew();
 };
-window.togglePetNew=()=>{
-  const sel=document.getElementById('wiz_pet_select');
-  document.getElementById('petNewWrap').classList.toggle('hidden', sel.value!=='__new__');
+window.toggleSvcPetNew=()=>{
+  const sel=document.getElementById('svc_pet_select');
+  document.getElementById('svcPetNewWrap').classList.toggle('hidden', sel.value!=='__new__');
 };
-window.wizPhotoChange=(input)=>{
+window.svcPhotoChange=(input)=>{
   readImage(input,(dataUrl)=>{
     wizPhoto=dataUrl;
-    document.getElementById('wiz_photo_box').innerHTML=`<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;"><input type="file" accept="image/*" onchange="wizPhotoChange(this)">`;
+    document.getElementById('svc_photo_box').innerHTML=`<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;"><input type="file" accept="image/*" onchange="svcPhotoChange(this)">`;
     toast('🖼️ Đã tải ảnh trước');
   });
 };
-window.submitPhucVu=()=>{
-  const custMode=document.querySelector('input[name="custMode"]:checked').value;
+window.submitService=()=>{
+  const custMode=document.querySelector('input[name="svcCustMode"]:checked').value;
   let custId, custName;
   if(custMode==='new'){
-    custName=document.getElementById('wiz_cust_name').value.trim();
+    custName=document.getElementById('svc_cust_name').value.trim();
     if(!custName){toast('⚠️ Vui lòng nhập tên khách hàng mới');return;}
     custId=Math.max(0,...state.customers.map(c=>c.id))+1;
-    state.customers.push({id:custId,name:custName,phone:document.getElementById('wiz_cust_phone').value,address:'',email:'',tier:'Silver',points:0,bookings:[],history:[]});
+    state.customers.push({id:custId,name:custName,phone:document.getElementById('svc_cust_phone').value,address:'',email:'',tier:'Silver',points:0,bookings:[],history:[]});
   } else {
-    custId=+document.getElementById('wiz_cust_select').value;
+    custId=+document.getElementById('svc_cust_select').value;
     custName=ownerById(custId).name;
   }
-  let petId, petSelVal=document.getElementById('wiz_pet_select')?document.getElementById('wiz_pet_select').value:'__new__';
+  let petId, petSelVal=document.getElementById('svc_pet_select')?document.getElementById('svc_pet_select').value:'__new__';
   if(custMode==='new' || petSelVal==='__new__'){
-    const petName=document.getElementById('wiz_pet_name').value.trim();
+    const petName=document.getElementById('svc_pet_name').value.trim();
     if(!petName){toast('⚠️ Vui lòng nhập tên thú cưng (mới)');return;}
     petId=Math.max(0,...state.pets.map(p=>p.id))+1;
-    state.pets.push({id:petId,ownerId:custId,name:petName,breed:document.getElementById('wiz_pet_breed').value,note:''});
+    state.pets.push({id:petId,ownerId:custId,name:petName,breed:document.getElementById('svc_pet_breed').value,note:''});
   } else {
     petId=+petSelVal;
   }
-  const svc=state.services.find(s=>s.id===+document.getElementById('wiz_service').value);
-  const branch=document.getElementById('wiz_branch').value;
-  const discPercent=+document.getElementById('wiz_disc_percent').value||0;
-  const discAmount=Math.min(svc.price,+document.getElementById('wiz_disc_amount').value||0);
+  const svc=svcSelectedService();
+  if(!svc){toast('⚠️ Vui lòng chọn combo dịch vụ hợp lệ (loại thú cưng / mốc cân nặng)');return;}
+  const branch=document.getElementById('svc_branch').value;
+  const discPercent=+document.getElementById('svc_disc_percent').value||0;
+  const discAmount=Math.min(svc.price,+document.getElementById('svc_disc_amount').value||0);
   const finalPrice=Math.max(0,svc.price-discAmount);
 
   if(!wizPhoto){
     if(!confirm('Chưa có ảnh trước khi thực hiện dịch vụ. Vẫn tiếp tục?')) return;
   }
 
-  // Hàng hóa mua kèm -> tạo đơn riêng cho mỗi mặt hàng có số lượng > 0, đồng thời trừ tồn kho tương ứng
-  state.retail.forEach(r=>{
-    const qtyEl=document.getElementById('goods_qty_'+r.id);
-    const qty=qtyEl?+qtyEl.value:0;
-    if(qty>0){
-      const rv=retailView(r);
-      const oid=Math.max(...state.orders.map(o=>o.id))+1;
-      state.orders.push({id:oid,service:'[Hàng hóa] '+rv.name+' x'+qty,price:rv.sellPrice*qty,branch,customer:custName,date:TODAY,status:'Hoàn thành',staff:currentUser.name,
-        type:'hangban',refName:rv.name,originalPrice:rv.sellPrice*qty,discountAmount:0,discountPercent:0});
-      const w=warehouseById(r.warehouseId); if(w) w.stock=Math.max(0,w.stock-qty);
-    }
-  });
-
-  // Đơn dịch vụ chính (đã áp chiết khấu nếu có)
   const orderId=Math.max(...state.orders.map(o=>o.id))+1;
   state.orders.push({id:orderId,service:svc.name,price:finalPrice,branch,customer:custName,date:TODAY,status:'Đang xử lý',staff:currentUser.name,
     type:'dichvu',refName:svc.name,originalPrice:svc.price,discountAmount:discAmount,discountPercent:discPercent});
@@ -809,6 +921,193 @@ window.submitPhucVu=()=>{
   toast('✅ Đã tiếp nhận '+petById(petId).name+' — dịch vụ "'+svc.name+'" đang ở hàng đợi');
   renderSection('phucvukh');
 };
+
+/* ============ TAB 2: THÊM MỚI HÀNG HÓA ============
+   Thay vì liệt kê toàn bộ hàng hóa (chiếm nhiều diện tích, khó nhìn), người dùng gõ tìm
+   và bấm "+ Thêm" — chỉ những mặt hàng đã chọn (tên, đơn giá, số lượng) mới hiển thị. */
+let gdCart = []; // {retailId, qty}
+function gdCartTotal(){
+  return gdCart.reduce((sum,it)=>{
+    const r=state.retail.find(x=>x.id===it.retailId); const rv=r?retailView(r):null;
+    return sum + (rv?rv.sellPrice*it.qty:0);
+  },0);
+}
+function buildGoodsTabHtml(){
+  const myBranch = (state.staff.find(s=>s.id===currentUser.staffId)||{}).branch || branchNames()[0];
+  return `
+  <b>Khách hàng</b>
+  <div class="flex gap8" style="margin:10px 0;">
+    <label class="small"><input type="radio" name="gdCustMode" value="existing" checked onchange="toggleGdCustMode('existing')"> Khách đã có</label>
+    <label class="small"><input type="radio" name="gdCustMode" value="new" onchange="toggleGdCustMode('new')"> Khách mới</label>
+  </div>
+  <div id="gdCustExistingWrap">
+    <select id="gd_cust_select" style="width:100%">
+      ${state.customers.map(c=>`<option value="${c.id}">${c.name} · ${c.phone}</option>`).join('')}
+    </select>
+  </div>
+  <div id="gdCustNewWrap" class="hidden">
+    <div class="formgrid">
+      <div class="field"><label class="f">Họ tên</label><input type="text" id="gd_cust_name" style="width:100%"></div>
+      <div class="field"><label class="f">SĐT</label><input type="tel" id="gd_cust_phone" style="width:100%"></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <b>Hàng hóa</b>
+  <label class="f" style="margin-top:10px;">Cơ sở áp dụng</label>
+  <select id="gd_branch" style="width:100%">${branchNames().map(b=>`<option ${b===myBranch?'selected':''}>${b}</option>`).join('')}</select>
+
+  <label class="f" style="margin-top:10px;">🔎 Tìm & thêm hàng hóa</label>
+  <div class="flex gap8">
+    <input type="text" id="gd_item_search" list="gd_item_datalist" placeholder="Gõ tên hàng hóa (VD: Gà sấy, Royal Canin...)" style="flex:1;">
+    <input type="number" id="gd_item_qty" value="1" min="1" style="width:64px;text-align:center;">
+    <button type="button" class="btn ghost sm" onclick="addGoodsToCart()">+ Thêm</button>
+  </div>
+  <datalist id="gd_item_datalist">${state.retail.map(r=>`<option value="${retailView(r).name}">`).join('')}</datalist>
+
+  <div id="gd_cart_list" style="margin-top:12px;"></div>
+
+  <div class="formgrid" style="margin-top:10px;">
+    <div class="field"><label class="f">Chiết khấu (%)</label><input type="number" id="gd_disc_percent" value="0" min="0" max="100" style="width:100%" oninput="gdDiscPercentChange(this)"></div>
+    <div class="field"><label class="f">Chiết khấu (số tiền)</label><input type="number" id="gd_disc_amount" value="0" min="0" style="width:100%" oninput="gdDiscAmountChange(this)"></div>
+  </div>
+  <div class="small muted" id="gd_price_preview" style="margin-top:6px;"></div>
+
+  <div style="margin-top:18px;text-align:right;"><button class="btn primary" onclick="submitGoods()">🛒 Bán hàng</button></div>`;
+}
+window.addGoodsToCart=()=>{
+  const val=document.getElementById('gd_item_search').value.trim();
+  const qtyWanted=Math.max(1,+document.getElementById('gd_item_qty').value||1);
+  const r=state.retail.find(x=>retailView(x).name===val);
+  if(!r){toast('⚠️ Không tìm thấy hàng hóa này — vui lòng chọn từ gợi ý khi gõ');return;}
+  const rv=retailView(r);
+  const existing=gdCart.find(it=>it.retailId===r.id);
+  const already=existing?existing.qty:0;
+  const maxAddable=rv.stock-already;
+  if(maxAddable<=0){toast('⚠️ '+rv.name+' đã hết hàng trong kho hoặc đã đạt tồn kho tối đa trong giỏ');return;}
+  const addQty=Math.min(qtyWanted,maxAddable);
+  if(existing) existing.qty+=addQty; else gdCart.push({retailId:r.id,qty:addQty});
+  document.getElementById('gd_item_search').value='';
+  document.getElementById('gd_item_qty').value=1;
+  renderGoodsCart();
+  toast('✅ Đã thêm '+rv.name+(addQty<qtyWanted?' (chỉ còn '+addQty+' trong kho)':''));
+};
+window.removeGoodsFromCart=(retailId)=>{
+  gdCart=gdCart.filter(it=>it.retailId!==retailId);
+  renderGoodsCart();
+};
+window.updateGoodsCartQty=(retailId,val)=>{
+  const r=state.retail.find(x=>x.id===retailId); const rv=r?retailView(r):null;
+  const it=gdCart.find(x=>x.retailId===retailId);
+  if(!it) return;
+  let q=Math.floor(+val||0);
+  if(rv) q=Math.min(q,rv.stock);
+  if(q<=0){ gdCart=gdCart.filter(x=>x.retailId!==retailId); }
+  else it.qty=q;
+  renderGoodsCart();
+};
+function renderGoodsCart(){
+  const wrap=document.getElementById('gd_cart_list');
+  if(!wrap) return;
+  if(!gdCart.length){
+    wrap.innerHTML='<div class="muted small">Chưa chọn hàng hóa nào — tìm tên ở trên rồi bấm "+ Thêm".</div>';
+  } else {
+    wrap.innerHTML = gdCart.map(it=>{
+      const r=state.retail.find(x=>x.id===it.retailId); const rv=r?retailView(r):{name:'(Đã xoá)',sellPrice:0,stock:0};
+      return `<div class="flex between center" style="padding:7px 0;border-bottom:1px dashed var(--line);">
+        <span class="small">${rv.name}<br><span class="muted">${vnd(rv.sellPrice)} / đơn vị</span></span>
+        <div class="flex gap8 center">
+          <input type="number" min="1" max="${rv.stock}" value="${it.qty}" style="width:56px;text-align:center;" onchange="updateGoodsCartQty(${it.retailId},this.value)">
+          <span class="mono small" style="min-width:78px;text-align:right;">${vnd(rv.sellPrice*it.qty)}</span>
+          <button type="button" class="btn ghost sm" onclick="removeGoodsFromCart(${it.retailId})">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  onGoodsCartChange();
+}
+window.gdDiscPercentChange=(el)=>{
+  const total=gdCartTotal();
+  const pct=Math.min(100,Math.max(0,+el.value||0));
+  const amt=Math.round(total*pct/100);
+  document.getElementById('gd_disc_amount').value=amt;
+  updateGoodsPricePreview();
+};
+window.gdDiscAmountChange=(el)=>{
+  const total=gdCartTotal();
+  const amt=Math.max(0,Math.min(total,+el.value||0));
+  const pct = total? +(amt/total*100).toFixed(1) : 0;
+  document.getElementById('gd_disc_percent').value=pct;
+  updateGoodsPricePreview();
+};
+function onGoodsCartChange(){
+  // giữ nguyên % chiết khấu hiện tại, tính lại số tiền chiết khấu theo tổng mới
+  const total=gdCartTotal();
+  const pct=+((document.getElementById('gd_disc_percent')||{}).value)||0;
+  const amt=Math.round(total*pct/100);
+  const amtEl=document.getElementById('gd_disc_amount');
+  if(amtEl) amtEl.value=amt;
+  updateGoodsPricePreview();
+}
+window.updateGoodsPricePreview=()=>{
+  const total=gdCartTotal();
+  const amt=+((document.getElementById('gd_disc_amount')||{}).value)||0;
+  const final=Math.max(0,total-amt);
+  const el=document.getElementById('gd_price_preview');
+  if(el) el.innerHTML = `Tổng tiền hàng: <b>${vnd(total)}</b> → Sau chiết khấu: <b>${vnd(final)}</b>`;
+};
+window.toggleGdCustMode=(mode)=>{
+  document.getElementById('gdCustExistingWrap').classList.toggle('hidden',mode==='new');
+  document.getElementById('gdCustNewWrap').classList.toggle('hidden',mode!=='new');
+};
+window.submitGoods=()=>{
+  if(!gdCart.length){toast('⚠️ Vui lòng thêm ít nhất 1 hàng hóa vào giỏ');return;}
+  const custMode=document.querySelector('input[name="gdCustMode"]:checked').value;
+  let custName;
+  if(custMode==='new'){
+    custName=document.getElementById('gd_cust_name').value.trim();
+    if(!custName){toast('⚠️ Vui lòng nhập tên khách hàng mới');return;}
+    const custId=Math.max(0,...state.customers.map(c=>c.id))+1;
+    state.customers.push({id:custId,name:custName,phone:document.getElementById('gd_cust_phone').value,address:'',email:'',tier:'Silver',points:0,bookings:[],history:[]});
+  } else {
+    const custId=+document.getElementById('gd_cust_select').value;
+    custName=ownerById(custId).name;
+  }
+  const branch=document.getElementById('gd_branch').value;
+  const total=gdCartTotal();
+  const discPercent=+document.getElementById('gd_disc_percent').value||0;
+  const discAmount=Math.min(total,+document.getElementById('gd_disc_amount').value||0);
+  // Phân bổ chiết khấu theo tỷ trọng giá trị từng mặt hàng trong giỏ (dòng cuối nhận phần dư để tổng khớp tuyệt đối)
+  let remainingDisc=discAmount;
+  gdCart.forEach((it,idx)=>{
+    const r=state.retail.find(x=>x.id===it.retailId); if(!r) return;
+    const rv=retailView(r);
+    const lineTotal=rv.sellPrice*it.qty;
+    const isLast = idx===gdCart.length-1;
+    const lineDisc = isLast ? remainingDisc : (total? Math.round(lineTotal/total*discAmount) : 0);
+    remainingDisc -= lineDisc;
+    const finalLine=Math.max(0,lineTotal-lineDisc);
+    const oid=Math.max(...state.orders.map(o=>o.id))+1;
+    state.orders.push({id:oid,service:'[Hàng hóa] '+rv.name+' x'+it.qty,price:finalLine,branch,customer:custName,date:TODAY,status:'Hoàn thành',staff:currentUser.name,
+      type:'hangban',refName:rv.name,originalPrice:lineTotal,discountAmount:lineDisc,discountPercent:discPercent});
+    const w=warehouseById(r.warehouseId); if(w) w.stock=Math.max(0,w.stock-it.qty);
+  });
+  gdCart=[];
+  closeModal();
+  toast('✅ Đã bán hàng cho '+custName);
+  renderSection('phucvukh');
+};
+
+window.openAddOrderWizard=()=>{
+  wizPhoto='';
+  gdCart=[];
+  openModal(buildWizardHtml());
+  switchWizTab('dichvu');
+  onSvcComboGroupChange();
+  populateSvcPetSelect();
+  renderGoodsCart();
+};
+
 
 /* ---- LƯƠNG CỦA TÔI (staff only) ---- */
 RENDER.luongtoi = () => {
@@ -1164,9 +1463,9 @@ window.openAddOrder=()=>{
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
   <h3>+ Thêm đơn hàng</h3>
   <div class="formgrid">
-    <div class="field full"><label class="f">Dịch vụ</label><select id="o_service" style="width:100%" onchange="document.getElementById('o_price').value=state.services.find(s=>s.name===this.value).price">
-      ${state.services.map(s=>`<option value="${s.name}">${s.name}</option>`).join('')}
-    </select></div>
+    <div class="field full"><label class="f">Dịch vụ (gõ để tìm)</label><input type="text" id="o_service" list="o_service_list" style="width:100%" value="${state.services[0].name}" oninput="onOServiceInput(this.value)">
+      <datalist id="o_service_list">${state.services.map(s=>`<option value="${s.name}">`).join('')}</datalist>
+    </div>
     <div class="field"><label class="f">Giá</label><input type="number" id="o_price" style="width:100%" value="${state.services[0].price}"></div>
     <div class="field"><label class="f">Cơ sở áp dụng</label><select id="o_branch" style="width:100%">${branchNames().map(b=>`<option>${b}</option>`).join('')}</select></div>
     <div class="field"><label class="f">Khách hàng</label><select id="o_cust" style="width:100%">${state.customers.map(c=>`<option>${c.name}</option>`).join('')}</select></div>
@@ -1174,6 +1473,10 @@ window.openAddOrder=()=>{
     <div class="field"><label class="f">Ngày</label><input type="date" id="o_date" style="width:100%" value="${TODAY}"></div>
   </div>
   <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveOrder()">Lưu đơn hàng</button></div>`);
+};
+window.onOServiceInput=(val)=>{
+  const svc=state.services.find(s=>s.name===val);
+  if(svc) document.getElementById('o_price').value=svc.price;
 };
 window.saveOrder=()=>{
   const id=Math.max(...state.orders.map(o=>o.id))+1;
@@ -1222,16 +1525,56 @@ window.filterTable=(tableId,q)=>{
 
 /* ---- DỊCH VỤ ---- */
 RENDER.dichvu = () => {
+  const groupsHtml = COMBO_GROUPS.map(g=>{
+    const items = state.services.filter(s=>s.comboGroup===g.key);
+    if(!items.length) return '';
+    return `
+    <div class="dv-group" style="margin-bottom:18px;">
+      <div class="bold" style="margin-bottom:8px;">${g.label}</div>
+      <div class="tblwrap"><div class="scroller"><table>
+        <tr><th>Loại thú</th><th>${g.byPart?'Bộ phận':'Mốc cân nặng'}</th><th>Giá</th><th>Số lượt đã sử dụng</th><th>Hoa hồng mặc định</th><th></th></tr>
+        ${items.map(s=>`<tr data-key="${s.name.toLowerCase()}">
+          <td>${s.petType}</td><td>${s.tier}</td>
+          <td class="mono">${vnd(s.price)}</td><td class="mono">${s.used}</td><td class="mono">${s.commissionRate}%</td>
+          <td class="flex gap8"><button class="btn ghost sm" onclick="editService(${s.id})">Sửa</button><button class="btn ghost sm" onclick="deleteService(${s.id})">Xóa</button></td>
+        </tr>`).join('')}
+      </table></div></div>
+    </div>`;
+  }).join('');
+  const others = state.services.filter(s=>!s.comboGroup);
+  const othersHtml = others.length ? `
+    <div class="dv-group" style="margin-bottom:18px;">
+      <div class="bold" style="margin-bottom:8px;">Dịch vụ khác</div>
+      <div class="tblwrap"><div class="scroller"><table>
+        <tr><th>Tên dịch vụ</th><th>Giá</th><th>Số lượt đã sử dụng</th><th>Hoa hồng mặc định</th><th></th></tr>
+        ${others.map(s=>`<tr data-key="${s.name.toLowerCase()}">
+          <td><b>${s.name}</b></td><td class="mono">${vnd(s.price)}</td><td class="mono">${s.used}</td><td class="mono">${s.commissionRate}%</td>
+          <td class="flex gap8"><button class="btn ghost sm" onclick="editService(${s.id})">Sửa</button><button class="btn ghost sm" onclick="deleteService(${s.id})">Xóa</button></td>
+        </tr>`).join('')}
+      </table></div></div>
+    </div>` : '';
   return `
   <div class="toolbar">
-    <div class="small muted">Bảng giá dịch vụ, số lượt sử dụng và % hoa hồng (có thể tùy chỉnh theo từng nhân viên).</div>
+    <div class="search">🔎 <input placeholder="Tìm dịch vụ (VD: Tắm thường, Chó, 3-5kg...)" oninput="filterServiceGroups(this.value)"></div>
     <button class="btn primary" onclick="openAddService()">+ Thêm dịch vụ</button>
   </div>
-  <div class="tblwrap"><div class="scroller"><table>
-    <tr><th>Tên dịch vụ</th><th>Giá</th><th>Số lượt đã sử dụng</th><th>Hoa hồng mặc định</th><th></th></tr>
-    ${state.services.map(s=>`<tr><td><b>${s.name}</b></td><td class="mono">${vnd(s.price)}</td><td class="mono">${s.used}</td><td class="mono">${s.commissionRate}%</td>
-      <td class="flex gap8"><button class="btn ghost sm" onclick="editService(${s.id})">Sửa</button><button class="btn ghost sm" onclick="deleteService(${s.id})">Xóa</button></td></tr>`).join('')}
-  </table></div></div>`;
+  <div class="small muted" style="margin-bottom:14px;">Bảng giá dịch vụ theo từng combo (Chó/Mèo · mốc cân nặng hoặc bộ phận), số lượt sử dụng và % hoa hồng mặc định (có thể tùy chỉnh theo từng nhân viên khi bấm "Sửa").</div>
+  <div id="dichvuAll">
+    ${groupsHtml}
+    ${othersHtml}
+  </div>`;
+};
+window.filterServiceGroups=(q)=>{
+  q=q.toLowerCase();
+  document.querySelectorAll('#dichvuAll .dv-group').forEach(group=>{
+    let anyVisible=false;
+    group.querySelectorAll('tr[data-key]').forEach(r=>{
+      const show=r.dataset.key.includes(q);
+      r.style.display=show?'':'none';
+      if(show) anyVisible=true;
+    });
+    group.style.display=anyVisible?'':'none';
+  });
 };
 window.openAddService=()=>{
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
@@ -1292,12 +1635,19 @@ RENDER.hangban = () => {
   return `
   <div class="toolbar">
     <div class="small muted">Sản phẩm bán lẻ — mỗi mặt hàng bán ra đều lấy từ Kho hàng (giá nhập ở Kho, giá bán ở đây).</div>
+    <div class="search">🔎 <input placeholder="Tìm hàng bán..." oninput="filterCards('hangbanCards',this.value)"></div>
     <button class="btn primary" onclick="openAddRetail()">+ Thêm hàng bán</button>
   </div>
-  <div class="prodcards">${state.retail.map(r=>retailCard(retailView(r))).join('')}</div>`;
+  <div class="prodcards" id="hangbanCards">${state.retail.map(r=>retailCard(retailView(r))).join('')}</div>`;
+};
+window.filterCards=(containerId,q)=>{
+  q=q.toLowerCase();
+  document.querySelectorAll('#'+containerId+' [data-key]').forEach(el=>{
+    el.style.display = el.dataset.key.includes(q) ? '' : 'none';
+  });
 };
 function retailCard(rv){
-  return `<div class="pcard">
+  return `<div class="pcard" data-key="${(rv.name+' '+rv.category).toLowerCase()}">
     <div class="thumb">${rv.image?`<img src="${rv.image}">`:'📦'}</div>
     <div class="body">
       <div class="cat">${rv.category}</div>
@@ -1430,14 +1780,15 @@ RENDER.khohang = () => {
   return `
   <div class="toolbar">
     <div class="small muted">Tồn kho theo giá nhập. Mặt hàng đang được bán lẻ sẽ có thẻ "🛍️ Đang bán".</div>
+    <div class="search">🔎 <input placeholder="Tìm hàng trong kho..." oninput="filterCards('khohangCards',this.value)"></div>
     <button class="btn primary" onclick="openAddWarehouse()">+ Thêm vào kho</button>
   </div>
-  <div class="prodcards">${state.warehouse.map(warehouseCard).join('')}</div>`;
+  <div class="prodcards" id="khohangCards">${state.warehouse.map(warehouseCard).join('')}</div>`;
 };
 function warehouseCard(w){
   const low = w.stock<8;
   const linkedRetail = state.retail.find(r=>r.warehouseId===w.id);
-  return `<div class="pcard">
+  return `<div class="pcard" data-key="${(w.name+' '+w.category).toLowerCase()}">
     <div class="thumb">${w.image?`<img src="${w.image}">`:'📦'}</div>
     <div class="body">
       <div class="cat">${w.category}</div>
@@ -1577,9 +1928,18 @@ RENDER.khachhang = () => {
     </tr>`).join('')}
   </table></div></div>`;
 };
+/* Lấy lịch sử thực tế từ state.orders (đồng bộ trực tiếp với dữ liệu phát sinh ở "Phục vụ khách hàng",
+   thay vì mảng c.history tĩnh trước đây không được cập nhật khi có đơn mới). */
+function customerOrders(c){
+  return state.orders.filter(o=>o.customer===c.name && o.status!=='Đã huỷ').sort((a,b)=>b.date.localeCompare(a.date));
+}
 window.openCustomer=(id)=>{
   const c=ownerById(id);
   const pets=state.pets.filter(p=>p.ownerId===id);
+  const orders=customerOrders(c);
+  const totalSpent=orders.reduce((sum,o)=>sum+o.price,0);
+  const svcSpent=orders.filter(o=>o.type==='dichvu').reduce((sum,o)=>sum+o.price,0);
+  const goodsSpent=orders.filter(o=>o.type==='hangban').reduce((sum,o)=>sum+o.price,0);
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
   <h3>👤 ${c.name} <span class="pill ${c.tier.toLowerCase()}">${c.tier}</span></h3>
   <div class="formgrid small" style="margin-bottom:10px;">
@@ -1592,9 +1952,13 @@ window.openCustomer=(id)=>{
   <div class="flex between center"><b>Lịch đặt sắp tới</b><button class="btn ghost sm" onclick="openAddBooking(${id})">+ Đặt lịch</button></div>
   ${c.bookings.length?c.bookings.map(b=>`<div class="chip" style="margin-top:8px;display:inline-block;">📅 ${b.date} · ${b.service} ${b.time!=='—'?'· '+b.time:''}</div>`).join('<br>'):'<div class="muted small" style="margin-top:8px;">Chưa có lịch hẹn nào.</div>'}
   <div class="divider"></div>
-  <b>Lịch sử sử dụng dịch vụ</b>
-  <div class="small" style="margin-top:8px;">
-    ${c.history.map(h=>`<div class="flex between" style="padding:6px 0;border-bottom:1px dashed var(--line);"><span>${h.service}</span><span class="mono">${vnd(h.price)} · ${h.date}</span></div>`).join('')}
+  <div class="flex between center wrap gap8">
+    <b>Lịch sử sử dụng dịch vụ &amp; mua hàng</b>
+    <span class="pill ok">Tổng đã sử dụng: ${vnd(totalSpent)}</span>
+  </div>
+  <div class="small muted" style="margin-top:4px;">Dịch vụ: ${vnd(svcSpent)} · Hàng hóa: ${vnd(goodsSpent)} · ${orders.length} lượt giao dịch</div>
+  <div class="small" style="margin-top:8px;max-height:220px;overflow-y:auto;">
+    ${orders.length ? orders.map(o=>`<div class="flex between" style="padding:6px 0;border-bottom:1px dashed var(--line);"><span>${o.service}<span class="muted"> · ${o.branch}</span></span><span class="mono">${vnd(o.price)} · ${o.date}</span></div>`).join('') : '<div class="muted small">Chưa có lịch sử sử dụng dịch vụ / mua hàng.</div>'}
   </div>
   <div class="divider"></div>
   <b>Thú cưng</b>
@@ -1635,7 +1999,8 @@ window.deleteCustomer=(id)=>{
 window.openAddBooking=(custId)=>{
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
   <h3>📅 Đặt lịch mới</h3>
-  <label class="f">Dịch vụ</label><select id="bk_service" style="width:100%">${state.services.map(s=>`<option>${s.name}</option>`).join('')}</select>
+  <label class="f">Dịch vụ (gõ để tìm)</label><input type="text" id="bk_service" list="bk_service_list" style="width:100%" value="${state.services[0].name}">
+  <datalist id="bk_service_list">${state.services.map(s=>`<option value="${s.name}">`).join('')}</datalist>
   <label class="f" style="margin-top:10px;">Ngày</label><input type="date" id="bk_date" style="width:100%" value="2026-07-10">
   <label class="f" style="margin-top:10px;">Giờ</label><input type="text" id="bk_time" style="width:100%" placeholder="VD: 09:00">
   <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveBooking(${custId})">Lưu lịch hẹn</button></div>`);
@@ -1762,7 +2127,8 @@ window.openAddSpaJob=()=>{
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
   <h3>+ Thêm ca Spa</h3>
   <label class="f">Pet</label><select id="sj_pet" style="width:100%">${state.pets.map(p=>`<option value="${p.id}">${p.name} (${ownerById(p.ownerId).name})</option>`).join('')}</select>
-  <label class="f" style="margin-top:10px;">Dịch vụ</label><select id="sj_service" style="width:100%">${state.services.map(s=>`<option>${s.name}</option>`).join('')}</select>
+  <label class="f" style="margin-top:10px;">Dịch vụ (gõ để tìm)</label><input type="text" id="sj_service" list="sj_service_list" style="width:100%" value="${state.services[0].name}">
+  <datalist id="sj_service_list">${state.services.map(s=>`<option value="${s.name}">`).join('')}</datalist>
   <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveSpaJob()">Tạo ca</button></div>`);
 };
 window.saveSpaJob=()=>{
@@ -1772,23 +2138,295 @@ window.saveSpaJob=()=>{
   closeModal(); toast('✅ Đã tạo ca spa mới'); renderSection('spa');
 };
 
+/* ---- QUẢN LÝ KHÁCH SẠN (theo dõi ký gửi thú cưng, lịch sử lưu trú & chi phí) ----
+   Giá khách sạn dùng chung cơ chế Combo (nhóm 'khach_san' trong COMBO_GROUPS/COMBO_PRICING)
+   nên có thể điều chỉnh giá/hoa hồng trực tiếp ở trang "Quản lý dịch vụ" — áp dụng ngay
+   cho các lượt ký gửi mới mà không cần sửa code. */
+function hotelDaysBetween(checkIn, checkOutOrToday){
+  const a=new Date(checkIn+'T00:00:00'), b=new Date(checkOutOrToday+'T00:00:00');
+  const diff=Math.round((b-a)/86400000);
+  return Math.max(1, diff+1); // tính luôn ngày nhận, tối thiểu 1 ngày
+}
+function hsSelectedService(){
+  const petTypeEl=document.getElementById('hs_pet_type');
+  const tierEl=document.getElementById('hs_tier');
+  if(!petTypeEl||!tierEl) return null;
+  return state.services.find(s=>s.comboGroup==='khach_san' && s.petType===petTypeEl.value && s.tier===tierEl.value);
+}
+function hotelServiceFor(stay){
+  return state.services.find(s=>s.comboGroup==='khach_san' && s.petType===stay.petType && s.tier===stay.tier);
+}
+
+RENDER.khachsan = () => {
+  const active = state.hotelStays.filter(s=>s.status==='Đang lưu trú');
+  const activeCost = active.reduce((sum,s)=>sum+hotelDaysBetween(s.checkIn,TODAY)*s.pricePerDay,0);
+  return `
+  <div class="grid cols-3">
+    ${kpiCard('🏨','bg-teal', active.length, 'Thú cưng đang lưu trú')}
+    ${kpiCard('💰','bg-pink', vnd(activeCost), 'Chi phí tạm tính (đang lưu trú)')}
+    ${kpiCard('📋','bg-blue', state.hotelStays.filter(s=>s.status==='Đã trả').length, 'Tổng lượt đã trả phòng')}
+  </div>
+
+  <h2 class="h">🏨 Đang ký gửi</h2>
+  <div class="toolbar">
+    <div class="small muted">Danh sách thú cưng hiện đang lưu trú tại khách sạn. Giá theo Loại thú & Mốc cân nặng — chỉnh ở trang "Quản lý dịch vụ" (nhóm "Khách sạn / Ngày").</div>
+    <button class="btn primary" onclick="openAddHotelStay()">+ Ký gửi mới</button>
+  </div>
+  <div id="hotelActiveList">
+    ${active.length ? active.map(hotelActiveCard).join('') : `<div class="card muted small">Hiện không có thú cưng nào đang lưu trú.</div>`}
+  </div>
+
+  <h2 class="h">📜 Lịch sử ký gửi</h2>
+  <div class="toolbar">
+    <div class="flex gap8 center wrap">
+      <label class="f" style="margin:0;">Từ</label><input type="date" id="hs_from" value="2026-06-01">
+      <label class="f" style="margin:0;">Đến</label><input type="date" id="hs_to" value="${TODAY}">
+      <button class="btn ghost" onclick="renderSection('khachsan')">Lọc</button>
+    </div>
+    <div class="search">🔎 <input id="hs_search" placeholder="Tìm theo tên thú cưng, khách hàng..." oninput="filterTable('hotelHistTable',this.value)"></div>
+  </div>
+  <div id="hotelHistWrap">${hotelHistoryTableHtml()}</div>
+  `;
+};
+function hotelActiveCard(s){
+  const p=petById(s.petId), o=p?ownerById(p.ownerId):null;
+  const days=hotelDaysBetween(s.checkIn,TODAY);
+  const estCost=days*s.pricePerDay;
+  return `<div class="card" style="margin-bottom:10px;">
+    <div class="flex between center wrap gap8">
+      <div>
+        <div class="bold">🐾 ${p?p.name:'(?)'} <span class="muted small">— ${o?o.name:'—'}</span></div>
+        <div class="small muted">Nhận ngày ${s.checkIn} · ${s.branch} · ${s.petType||''}${s.tier?(' · '+s.tier):''} · ${vnd(s.pricePerDay)}/ngày</div>
+        ${s.notes?`<div class="small muted">📝 ${s.notes}</div>`:''}
+      </div>
+      <div class="flex gap8 center">
+        <span class="pill warn">${days} ngày · tạm tính ${vnd(estCost)}</span>
+        <button class="btn primary sm" onclick="openCheckoutHotelStay(${s.id})">✅ Trả thú cưng</button>
+      </div>
+    </div>
+  </div>`;
+}
+function hotelHistoryTableHtml(){
+  const from=document.getElementById('hs_from')?document.getElementById('hs_from').value:'2026-06-01';
+  const to=document.getElementById('hs_to')?document.getElementById('hs_to').value:TODAY;
+  const rows=state.hotelStays.filter(s=>s.status==='Đã trả' && s.checkOut>=from && s.checkOut<=to);
+  const total=rows.reduce((sum,s)=>sum+s.paid,0);
+  return `
+  <div class="small muted" style="margin-bottom:8px;">Tổng chi phí đã thanh toán trong khoảng đã chọn: <b>${vnd(total)}</b> (${rows.length} lượt)</div>
+  <div class="tblwrap"><div class="scroller"><table id="hotelHistTable">
+    <tr><th>Thú cưng</th><th>Khách hàng</th><th>Loại</th><th>Nhận</th><th>Trả</th><th>Số ngày</th><th>Đơn giá/ngày</th><th>Chiết khấu</th><th>Đã thanh toán</th><th>Cơ sở</th></tr>
+    ${rows.length ? rows.map(s=>{
+      const p=petById(s.petId), o=p?ownerById(p.ownerId):null;
+      const days=hotelDaysBetween(s.checkIn,s.checkOut);
+      return `<tr data-key="${((p?p.name:'')+' '+(o?o.name:'')).toLowerCase()}">
+        <td><b>${p?p.name:'(?)'}</b></td><td>${o?o.name:'—'}</td>
+        <td>${s.petType||''}${s.tier?('<br><span class="muted small">'+s.tier+'</span>'):''}</td>
+        <td class="mono">${s.checkIn}</td><td class="mono">${s.checkOut}</td>
+        <td class="mono">${days}</td><td class="mono">${vnd(s.pricePerDay)}</td>
+        <td class="mono">${s.discountAmount?vnd(s.discountAmount)+' ('+s.discountPercent+'%)':'—'}</td>
+        <td class="mono">${vnd(s.paid)}</td><td>${s.branch}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="10" class="muted small">Không có lượt ký gửi nào trong khoảng đã chọn.</td></tr>'}
+  </table></div></div>`;
+}
+window.openAddHotelStay=()=>{
+  const myBranch=(state.staff.find(s=>s.id===currentUser.staffId)||{}).branch || branchNames()[0];
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>🏨 Ký gửi thú cưng mới</h3>
+  <b>Khách hàng</b>
+  <div class="flex gap8" style="margin:10px 0;">
+    <label class="small"><input type="radio" name="hsCustMode" value="existing" checked onchange="toggleHsCustMode('existing')"> Khách đã có</label>
+    <label class="small"><input type="radio" name="hsCustMode" value="new" onchange="toggleHsCustMode('new')"> Khách mới</label>
+  </div>
+  <div id="hsCustExistingWrap">
+    <select id="hs_cust_select" style="width:100%" onchange="populateHsPetSelect()">
+      ${state.customers.map(c=>`<option value="${c.id}">${c.name} · ${c.phone}</option>`).join('')}
+    </select>
+  </div>
+  <div id="hsCustNewWrap" class="hidden">
+    <div class="formgrid">
+      <div class="field"><label class="f">Họ tên</label><input type="text" id="hs_cust_name" style="width:100%"></div>
+      <div class="field"><label class="f">SĐT</label><input type="tel" id="hs_cust_phone" style="width:100%"></div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <b>Thú cưng</b>
+  <div id="hsPetExistingWrap" style="margin-top:10px;">
+    <select id="hs_pet_select" style="width:100%" onchange="toggleHsPetNew()"></select>
+  </div>
+  <div id="hsPetNewWrap" class="hidden" style="margin-top:10px;">
+    <div class="formgrid">
+      <div class="field"><label class="f">Tên thú cưng</label><input type="text" id="hs_pet_name" style="width:100%"></div>
+      <div class="field"><label class="f">Giống</label><input type="text" id="hs_pet_breed" style="width:100%"></div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <b>Thông tin lưu trú</b>
+  <div class="formgrid" style="margin-top:10px;">
+    <div class="field"><label class="f">Ngày nhận</label><input type="date" id="hs_checkin" style="width:100%" value="${TODAY}"></div>
+    <div class="field"><label class="f">Cơ sở</label><select id="hs_branch" style="width:100%">${branchNames().map(b=>`<option ${b===myBranch?'selected':''}>${b}</option>`).join('')}</select></div>
+  </div>
+  <div class="formgrid" style="margin-top:10px;">
+    <div class="field"><label class="f">Loại thú cưng</label><select id="hs_pet_type" style="width:100%" onchange="onHsPetTypeChange()">${comboPetTypes('khach_san').map(t=>`<option value="${t}">${t}</option>`).join('')}</select></div>
+    <div class="field"><label class="f">Mốc cân nặng</label><select id="hs_tier" style="width:100%" onchange="onHsTierChange()"></select></div>
+  </div>
+  <div class="small muted" id="hs_price_preview" style="margin-top:6px;"></div>
+  <label class="f" style="margin-top:10px;">Ghi chú</label><textarea id="hs_notes" style="width:100%" rows="2" placeholder="VD: chế độ ăn, thuốc men..."></textarea>
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveHotelStay()">🏨 Nhận ký gửi</button></div>`);
+  populateHsPetSelect();
+  onHsPetTypeChange();
+};
+window.onHsPetTypeChange=()=>{
+  const petType=document.getElementById('hs_pet_type').value;
+  const tierSel=document.getElementById('hs_tier');
+  const tiers=comboTiers('khach_san',petType);
+  tierSel.innerHTML=tiers.map(t=>`<option value="${t.tier}">${t.tier} — ${vnd(t.price)}/ngày</option>`).join('');
+  onHsTierChange();
+};
+window.onHsTierChange=()=>{
+  const svc=hsSelectedService();
+  document.getElementById('hs_price_preview').innerHTML = svc ? `Giá áp dụng: <b>${vnd(svc.price)}/ngày</b>` : 'Chưa chọn được mức giá phù hợp.';
+};
+window.toggleHsCustMode=(mode)=>{
+  document.getElementById('hsCustExistingWrap').classList.toggle('hidden',mode==='new');
+  document.getElementById('hsCustNewWrap').classList.toggle('hidden',mode!=='new');
+  if(mode==='new'){
+    document.getElementById('hsPetExistingWrap').classList.add('hidden');
+    document.getElementById('hsPetNewWrap').classList.remove('hidden');
+  } else {
+    document.getElementById('hsPetExistingWrap').classList.remove('hidden');
+    populateHsPetSelect();
+  }
+};
+window.populateHsPetSelect=()=>{
+  const sel=document.getElementById('hs_pet_select');
+  const custId=+document.getElementById('hs_cust_select').value;
+  const myPets=state.pets.filter(p=>p.ownerId===custId);
+  sel.innerHTML = myPets.map(p=>`<option value="${p.id}">${p.name} (${p.breed})</option>`).join('') + `<option value="__new__">+ Thú cưng mới...</option>`;
+  toggleHsPetNew();
+};
+window.toggleHsPetNew=()=>{
+  const sel=document.getElementById('hs_pet_select');
+  document.getElementById('hsPetNewWrap').classList.toggle('hidden', sel.value!=='__new__');
+};
+window.saveHotelStay=()=>{
+  const custMode=document.querySelector('input[name="hsCustMode"]:checked').value;
+  let custId;
+  if(custMode==='new'){
+    const custName=document.getElementById('hs_cust_name').value.trim();
+    if(!custName){toast('⚠️ Vui lòng nhập tên khách hàng mới');return;}
+    custId=Math.max(0,...state.customers.map(c=>c.id))+1;
+    state.customers.push({id:custId,name:custName,phone:document.getElementById('hs_cust_phone').value,address:'',email:'',tier:'Silver',points:0,bookings:[],history:[]});
+  } else {
+    custId=+document.getElementById('hs_cust_select').value;
+  }
+  let petId, petSelVal=document.getElementById('hs_pet_select')?document.getElementById('hs_pet_select').value:'__new__';
+  if(custMode==='new' || petSelVal==='__new__'){
+    const petName=document.getElementById('hs_pet_name').value.trim();
+    if(!petName){toast('⚠️ Vui lòng nhập tên thú cưng (mới)');return;}
+    petId=Math.max(0,...state.pets.map(p=>p.id))+1;
+    state.pets.push({id:petId,ownerId:custId,name:petName,breed:document.getElementById('hs_pet_breed').value,note:''});
+  } else {
+    petId=+petSelVal;
+  }
+  const svc=hsSelectedService();
+  if(!svc){toast('⚠️ Vui lòng chọn Loại thú cưng / Mốc cân nặng hợp lệ');return;}
+  const checkIn=document.getElementById('hs_checkin').value || TODAY;
+  const branch=document.getElementById('hs_branch').value;
+  const notes=document.getElementById('hs_notes').value;
+  const id=Math.max(0,...state.hotelStays.map(s=>s.id))+1;
+  state.hotelStays.push({id,petId,checkIn,checkOut:null,pricePerDay:svc.price,petType:svc.petType,tier:svc.tier,branch,notes,paid:0,discountAmount:0,discountPercent:0,orderId:null,status:'Đang lưu trú',staff:currentUser.name});
+  closeModal(); toast('✅ Đã nhận ký gửi '+petById(petId).name); renderSection('khachsan');
+};
+window.openCheckoutHotelStay=(id)=>{
+  const s=state.hotelStays.find(x=>x.id===id);
+  const p=petById(s.petId);
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
+  <h3>✅ Trả thú cưng — ${p.name}</h3>
+  <div class="small muted" style="margin-bottom:10px;">Nhận ngày ${s.checkIn} · ${s.petType||''}${s.tier?(' · '+s.tier):''} · ${vnd(s.pricePerDay)}/ngày</div>
+  <label class="f">Ngày trả</label><input type="date" id="co_date" style="width:100%" value="${TODAY}" oninput="updateCheckoutPreview(${id})">
+  <div class="formgrid" style="margin-top:10px;">
+    <div class="field"><label class="f">Chiết khấu (%)</label><input type="number" id="co_disc_percent" value="0" min="0" max="100" style="width:100%" oninput="coDiscPercentChange(${id},this)"></div>
+    <div class="field"><label class="f">Chiết khấu (số tiền)</label><input type="number" id="co_disc_amount" value="0" min="0" style="width:100%" oninput="coDiscAmountChange(${id},this)"></div>
+  </div>
+  <div class="small muted" id="co_preview" style="margin-top:8px;"></div>
+  <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="confirmCheckoutHotelStay(${id})">💵 Xác nhận thanh toán &amp; trả thú cưng</button></div>`);
+  updateCheckoutPreview(id);
+};
+function coComputeTotal(id){
+  const s=state.hotelStays.find(x=>x.id===id);
+  const coDate=document.getElementById('co_date').value || TODAY;
+  const days=hotelDaysBetween(s.checkIn,coDate);
+  return {days, total: days*s.pricePerDay};
+}
+function renderCoPreview(days,total,amt){
+  const final=Math.max(0,total-amt);
+  document.getElementById('co_preview').innerHTML=`Số ngày lưu trú: <b>${days}</b> → Tổng trước chiết khấu: <b>${vnd(total)}</b> → Sau chiết khấu: <b>${vnd(final)}</b>`;
+}
+window.updateCheckoutPreview=(id)=>{
+  const {days,total}=coComputeTotal(id);
+  const pct=+document.getElementById('co_disc_percent').value||0;
+  const amt=Math.round(total*pct/100);
+  document.getElementById('co_disc_amount').value=amt;
+  renderCoPreview(days,total,amt);
+};
+window.coDiscPercentChange=(id,el)=>{
+  const {days,total}=coComputeTotal(id);
+  const pct=Math.min(100,Math.max(0,+el.value||0));
+  const amt=Math.round(total*pct/100);
+  document.getElementById('co_disc_amount').value=amt;
+  renderCoPreview(days,total,amt);
+};
+window.coDiscAmountChange=(id,el)=>{
+  const {days,total}=coComputeTotal(id);
+  const amt=Math.max(0,Math.min(total,+el.value||0));
+  const pct = total? +(amt/total*100).toFixed(1) : 0;
+  document.getElementById('co_disc_percent').value=pct;
+  renderCoPreview(days,total,amt);
+};
+window.confirmCheckoutHotelStay=(id)=>{
+  const s=state.hotelStays.find(x=>x.id===id);
+  const p=petById(s.petId), o=ownerById(p.ownerId);
+  const coDate=document.getElementById('co_date').value || TODAY;
+  if(coDate<s.checkIn){toast('⚠️ Ngày trả không được sớm hơn ngày nhận');return;}
+  const days=hotelDaysBetween(s.checkIn,coDate);
+  const total=days*s.pricePerDay;
+  const discAmount=Math.min(total,+document.getElementById('co_disc_amount').value||0);
+  const discPercent=+document.getElementById('co_disc_percent').value||0;
+  const finalTotal=Math.max(0,total-discAmount);
+
+  const hsvc=hotelServiceFor(s);
+  const svcName = hsvc ? hsvc.name : `Khách sạn / Ngày — ${s.petType||''} — ${s.tier||''}`;
+
+  const orderId=Math.max(...state.orders.map(x=>x.id))+1;
+  state.orders.push({id:orderId,service:svcName,price:finalTotal,branch:s.branch,customer:o.name,date:coDate,status:'Hoàn thành',staff:currentUser.name,
+    type:'dichvu',refName:svcName,originalPrice:total,discountAmount:discAmount,discountPercent:discPercent});
+  if(hsvc) hsvc.used++;
+
+  s.checkOut=coDate; s.paid=finalTotal; s.discountAmount=discAmount; s.discountPercent=discPercent; s.orderId=orderId; s.status='Đã trả';
+
+  closeModal(); toast('✅ Đã trả '+p.name+' — thu '+vnd(finalTotal)); renderSection('khachsan');
+};
+
+
 /* ---- QUẢN LÝ TÀI KHOẢN (admin only) — đổi username/password của admin & nhân viên ---- */
 RENDER.taikhoan = () => {
   const adminUser = users.find(u=>u.role==='admin');
-  const rows = [{ key:'admin', name:adminUser.name, role:'Quản trị viên (Admin)', username:adminUser.username, staffId:null }]
+  const rows = [{ key:'admin', name:adminUser.name, role:'Quản trị viên (Admin)', username:adminUser.username, password:adminUser.password, staffId:null }]
     .concat(state.staff.map(s=>{
       const u=users.find(x=>x.staffId===s.id);
-      return { key:'staff', name:s.name, role:s.position, username:u?u.username:'', staffId:s.id };
+      return { key:'staff', name:s.name, role:s.position, username:u?u.username:'', password:u?u.password:'', staffId:s.id };
     }));
   return `
   <div class="toolbar">
-    <div class="small muted">Đổi tên đăng nhập và mật khẩu cho tài khoản Admin và toàn bộ tài khoản Nhân viên.</div>
+    <div class="small muted">Đổi tên đăng nhập và mật khẩu cho tài khoản Admin và toàn bộ tài khoản Nhân viên. Mật khẩu hiển thị trực tiếp để dễ theo dõi/chỉnh sửa.</div>
   </div>
   <div class="tblwrap"><div class="scroller"><table>
-    <tr><th>Tên</th><th>Vai trò</th><th>Tài khoản</th><th></th></tr>
+    <tr><th>Tên</th><th>Vai trò</th><th>Tài khoản</th><th>Mật khẩu</th><th></th></tr>
     ${rows.map(r=>`<tr>
       <td><b>${r.name}</b></td><td>${r.role}</td>
       <td>${r.username?`<span class="pill ok">@${r.username}</span>`:`<span class="pill">Chưa có tài khoản</span>`}</td>
+      <td>${r.username?`<span class="mono">${r.password}</span>`:'—'}</td>
       <td>${r.key==='admin'?`<button class="btn ghost sm" onclick="editAdminAccount()">Đổi tên/mật khẩu</button>`
            : r.username?`<button class="btn ghost sm" onclick="editStaffAccount(${r.staffId})">Đổi tên/mật khẩu</button>`
            : `<button class="btn ghost sm" onclick="createStaffAccount(${r.staffId})">+ Tạo tài khoản</button>`}</td>
@@ -1800,7 +2438,7 @@ window.editAdminAccount=()=>{
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
   <h3>🔑 Đổi tài khoản Admin</h3>
   <label class="f">Tên đăng nhập</label><input type="text" id="ua_user" style="width:100%" value="${u.username}">
-  <label class="f" style="margin-top:10px;">Mật khẩu mới (để trống nếu không đổi)</label><input type="text" id="ua_pass" style="width:100%" placeholder="••••••••">
+  <label class="f" style="margin-top:10px;">Mật khẩu</label><input type="text" id="ua_pass" style="width:100%" value="${u.password}">
   <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveAdminAccount()">Cập nhật</button></div>`);
 };
 window.saveAdminAccount=()=>{
@@ -1819,7 +2457,7 @@ window.editStaffAccount=(staffId)=>{
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
   <h3>🔑 Đổi tài khoản — ${s.name}</h3>
   <label class="f">Tên đăng nhập</label><input type="text" id="us_user" style="width:100%" value="${u.username}">
-  <label class="f" style="margin-top:10px;">Mật khẩu mới (để trống nếu không đổi)</label><input type="text" id="us_pass" style="width:100%" placeholder="••••••••">
+  <label class="f" style="margin-top:10px;">Mật khẩu</label><input type="text" id="us_pass" style="width:100%" value="${u.password}">
   <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveStaffAccount(${staffId})">Cập nhật</button></div>`);
 };
 window.saveStaffAccount=(staffId)=>{
