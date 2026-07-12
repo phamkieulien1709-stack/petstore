@@ -38,12 +38,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);-webki
 .login-err{background:var(--red-soft);color:#A3271F;font-size:12px;padding:8px 10px;border-radius:8px;margin-bottom:12px;display:none;}
 .login-btn{width:100%;padding:11px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;font-size:13.5px;cursor:pointer;font-family:'Inter';}
 .login-btn:hover{filter:brightness(1.05);}
-.demo-accounts{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);}
-.demo-accounts .lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;}
-.demo-row{display:flex;justify-content:space-between;align-items:center;background:#F4F6F0;border-radius:9px;padding:8px 10px;font-size:12px;margin-bottom:6px;cursor:pointer;}
-.demo-row:hover{background:var(--accent-soft);}
-.demo-row b{font-weight:700;}
-.demo-row span{color:var(--muted);font-family:'JetBrains Mono';font-size:11px;}
+
 
 /* ---------------- APP SHELL ---------------- */
 .app{display:flex;min-height:100vh;}
@@ -293,11 +288,6 @@ a.linklike:hover{text-decoration:underline;}
     <label>Mật khẩu</label>
     <input type="password" id="loginPass" placeholder="••••••••">
     <button class="login-btn" onclick="doLogin()">Đăng nhập</button>
-    <div class="demo-accounts">
-      <div class="lbl">Tài khoản demo (bấm để điền nhanh)</div>
-      <div class="demo-row" onclick="fillLogin('admin','admin123')"><b>👑 admin</b><span>admin123</span></div>
-      <div class="demo-row" onclick="fillLogin('thao','123456')"><b>💼 thao (nhân viên)</b><span>123456</span></div>
-    </div>
   </div>
 </div>
 
@@ -329,12 +319,9 @@ a.linklike:hover{text-decoration:underline;}
 /* ============================= AUTH DATA ============================= */
 const users = [
   {username:'admin', password:'admin123', role:'admin', name:'Quản trị viên', staffId:null},
-  {username:'thao',  password:'123456',   role:'staff', name:'Nguyễn Thị Thảo', staffId:1},
-  {username:'minh',  password:'123456',   role:'staff', name:'Đặng Văn Minh',   staffId:2},
 ];
 let currentUser = null;
 
-window.fillLogin=(u,p)=>{document.getElementById('loginUser').value=u;document.getElementById('loginPass').value=p;};
 window.doLogin=()=>{
   const u=document.getElementById('loginUser').value.trim();
   const p=document.getElementById('loginPass').value;
@@ -423,88 +410,22 @@ const state = {
     {id:1,name:'Quận 1',address:'12 Nguyễn Trãi, Phường Bến Thành, TP.HCM'},
     {id:2,name:'Quận 7',address:'88 Nguyễn Thị Thập, Phường Tân Phú, TP.HCM'},
   ],
-  staff:[
-    {id:1,name:'Nguyễn Thị Thảo',position:'Groomer',branch:'Quận 1',baseSalary:8000000,phone:'0909 111 222',username:'thao'},
-    {id:2,name:'Đặng Văn Minh',position:'Groomer',branch:'Quận 7',baseSalary:7500000,phone:'0909 222 333',username:'minh'},
-    {id:3,name:'Vũ Thị Hà',position:'Hotel & Spa',branch:'Quận 1',baseSalary:7000000,phone:'0909 333 444',username:''},
-    {id:4,name:'Lâm Bảo Ngọc',position:'Bán hàng',branch:'Quận 7',baseSalary:6800000,phone:'0909 444 555',username:''},
-  ],
+  staff:[],
   services: buildComboServices(),
-  orders:[
-    {id:1,service:'Tắm + Cắt tỉa',price:280000,branch:'Quận 1',customer:'Nguyễn Thị Lan Anh',date:'2026-07-05',status:'Hoàn thành',staff:'Nguyễn Thị Thảo',type:'dichvu',refName:'Tắm + Cắt tỉa',originalPrice:280000,discountAmount:0,discountPercent:0},
-    {id:2,service:'Khách sạn / Ngày — Chó — Dưới 5 KG',price:714000,branch:'Quận 1',customer:'Nguyễn Thị Lan Anh',date:'2026-06-25',status:'Hoàn thành',staff:'Vũ Thị Hà',type:'dichvu',refName:'Khách sạn / Ngày — Chó — Dưới 5 KG',originalPrice:714000,discountAmount:0,discountPercent:0},
-    {id:3,service:'Tắm cơ bản',price:150000,branch:'Quận 1',customer:'Phạm Minh Châu',date:'2026-06-28',status:'Hoàn thành',staff:'Nguyễn Thị Thảo',type:'dichvu',refName:'Tắm cơ bản',originalPrice:150000,discountAmount:0,discountPercent:0},
-    {id:4,service:'Cắt móng + vệ sinh tai',price:80000,branch:'Quận 7',customer:'Trần Văn Hùng',date:'2026-06-20',status:'Hoàn thành',staff:'Đặng Văn Minh',type:'dichvu',refName:'Cắt móng + vệ sinh tai',originalPrice:80000,discountAmount:0,discountPercent:0},
-    {id:5,service:'Tắm + Cắt tỉa',price:280000,branch:'Quận 1',customer:'Lê Hoài Thương',date:'2026-06-15',status:'Đã huỷ',staff:'',type:'dichvu',refName:'Tắm + Cắt tỉa',originalPrice:280000,discountAmount:0,discountPercent:0},
-    {id:6,service:'[Hàng hóa] Hạt Royal Canin 1.5kg x1',price:320000,branch:'Quận 1',customer:'Nguyễn Thị Lan Anh',date:'2026-06-30',status:'Hoàn thành',staff:'Lâm Bảo Ngọc',type:'hangban',refName:'Hạt Royal Canin 1.5kg',originalPrice:320000,discountAmount:0,discountPercent:0},
-  ],
-  retail:[
-    {id:1,warehouseId:4,sellPrice:320000,commissionRate:5,staffRates:{}},
-    {id:2,warehouseId:5,sellPrice:85000,commissionRate:5,staffRates:{}},
-    {id:3,warehouseId:6,sellPrice:45000,commissionRate:5,staffRates:{}},
-    {id:4,warehouseId:7,sellPrice:95000,commissionRate:5,staffRates:{}},
-    {id:5,warehouseId:8,sellPrice:50000,commissionRate:5,staffRates:{}},
-    {id:6,warehouseId:9,sellPrice:10000,commissionRate:5,staffRates:{}},
-    {id:7,warehouseId:10,sellPrice:50000,commissionRate:5,staffRates:{}},
-    {id:8,warehouseId:11,sellPrice:70000,commissionRate:5,staffRates:{}},
-    {id:9,warehouseId:12,sellPrice:50000,commissionRate:5,staffRates:{}},
-  ],
-  warehouse:[
-    {id:1,category:'Nguyên liệu spa',name:'Sữa tắm chuyên dụng',costPrice:95000,stock:20,image:''},
-    {id:2,category:'Thức ăn',name:'Pate Ciao (lốc 4)',costPrice:70000,stock:6,image:''},
-    {id:3,category:'Vệ sinh',name:'Cát vệ sinh mèo 5kg',costPrice:88000,stock:3,image:''},
-    {id:4,category:'Thức ăn',name:'Hạt Royal Canin 1.5kg',costPrice:260000,stock:14,image:''},
-    {id:5,category:'Phụ kiện',name:'Vòng cổ chống ve',costPrice:55000,stock:9,image:''},
-    {id:6,category:'Đồ chơi',name:'Bóng cao su gặm',costPrice:25000,stock:30,image:''},
-    {id:7,category:'Thức ăn',name:'Pate gà Ciao',costPrice:60000,stock:22,image:''},
-    {id:8,category:'Đồ ăn vặt sấy',name:'Mề gà sấy (100g)',costPrice:35000,stock:25,image:''},
-    {id:9,category:'Đồ ăn vặt sấy',name:'Cổ gà sấy (1 cái)',costPrice:6000,stock:40,image:''},
-    {id:10,category:'Đồ ăn vặt sấy',name:'Gà cuộn rau củ sấy (70g)',costPrice:35000,stock:25,image:''},
-    {id:11,category:'Đồ ăn vặt sấy',name:'Gà sấy (70g)',costPrice:48000,stock:25,image:''},
-    {id:12,category:'Đồ ăn vặt sấy',name:'Gan, phổi heo sấy (100g)',costPrice:35000,stock:25,image:''},
-  ],
-  customers:[
-    {id:1,name:'Nguyễn Thị Lan Anh',phone:'0901 234 567',address:'12 Nguyễn Trãi, Q.1',email:'lananh@gmail.com',tier:'Gold',points:180,
-      bookings:[{date:'2026-07-10',service:'Tắm + Cắt tỉa',time:'09:00'}],
-      history:[{date:'2026-06-28',service:'Tắm cơ bản',price:150000},{date:'2026-05-14',service:'Tắm + Cắt tỉa',price:280000}]},
-    {id:2,name:'Trần Văn Hùng',phone:'0912 345 678',address:'45 Lê Lợi, Q.3',email:'hung.tran@gmail.com',tier:'Platinum',points:420,
-      bookings:[],history:[{date:'2026-06-20',service:'Cắt móng + vệ sinh tai',price:80000}]},
-    {id:3,name:'Phạm Minh Châu',phone:'0987 654 321',address:'78 CMT8, Q.10',email:'chau.pham@gmail.com',tier:'Silver',points:65,
-      bookings:[],history:[{date:'2026-06-28',service:'Tắm cơ bản',price:150000}]},
-    {id:4,name:'Lê Hoài Thương',phone:'0933 221 144',address:'23 Phan Xích Long, Phú Nhuận',email:'thuong.le@gmail.com',tier:'Diamond',points:980,
-      bookings:[{date:'2026-07-06',service:'Khách sạn / ngày',time:'—'}],
-      history:[{date:'2026-07-04',service:'Khách sạn / ngày',price:300000},{date:'2026-06-15',service:'Tắm + Cắt tỉa',price:280000}]},
-  ],
-  pets:[
-    {id:1,ownerId:1,name:'Mochi',breed:'Poodle',note:'Sợ máy sấy'},
-    {id:2,ownerId:1,name:'Bông',breed:'Phốc sóc',note:'Chỉ ăn pate gà'},
-    {id:3,ownerId:2,name:'Rex',breed:'Golden Retriever',note:''},
-    {id:4,ownerId:3,name:'Kitty',breed:'Anh lông ngắn',note:''},
-    {id:5,ownerId:4,name:'Sushi',breed:'Corgi',note:''},
-    {id:6,ownerId:4,name:'Momo',breed:'Munchkin',note:'Kén ăn'},
-  ],
-  spaJobs:[
-    {id:1,petId:1,service:'Tắm + Cắt tỉa',status:'Tắm',staff:{'Chờ':'Vũ Thị Hà','Tắm':'Nguyễn Thị Thảo','Cắt':'','Hoàn thiện':''},before:'',after:'',date:'2026-07-05',orderId:null,completedDate:null},
-    {id:2,petId:3,service:'Tắm + Sấy',status:'Chờ',staff:{'Chờ':'Đặng Văn Minh','Tắm':'','Cắt':'','Hoàn thiện':''},before:'',after:'',date:'2026-07-05',orderId:null,completedDate:null},
-    {id:3,petId:5,service:'Cắt tỉa toàn thân',status:'Cắt',staff:{'Chờ':'Vũ Thị Hà','Tắm':'Nguyễn Thị Thảo','Cắt':'Nguyễn Thị Thảo','Hoàn thiện':''},before:'',after:'',date:'2026-07-05',orderId:null,completedDate:null},
-    {id:4,petId:4,service:'Cắt móng',status:'Hoàn thiện',staff:{'Chờ':'Vũ Thị Hà','Tắm':'','Cắt':'Đặng Văn Minh','Hoàn thiện':'Đặng Văn Minh'},before:'',after:'',date:'2026-07-03',orderId:4,completedDate:'2026-07-03'},
-  ],
-  hotelStays:[
-    {id:1,petId:5,checkIn:'2026-07-04',checkOut:null,pricePerDay:199000,petType:'Chó',tier:'10 - 15 KG',branch:'Quận 7',notes:'Ăn 2 bữa/ngày, mang theo pate riêng',paid:0,discountAmount:0,discountPercent:0,orderId:null,status:'Đang lưu trú',staff:'Vũ Thị Hà'},
-    {id:2,petId:2,checkIn:'2026-06-20',checkOut:'2026-06-25',pricePerDay:119000,petType:'Chó',tier:'Dưới 5 KG',branch:'Quận 1',notes:'',paid:714000,discountAmount:0,discountPercent:0,orderId:2,status:'Đã trả',staff:'Vũ Thị Hà'},
-  ],
-  expenses:[
-    {id:1,type:'Thuê mặt bằng',amount:12000000,branch:'Quận 1',date:'2026-07-01'},
-    {id:2,type:'Điện nước',amount:2800000,branch:'Quận 1',date:'2026-07-01'},
-    {id:3,type:'Lương nhân viên',amount:15300000,branch:'Quận 1',date:'2026-07-01'},
-    {id:4,type:'Thuê mặt bằng',amount:9500000,branch:'Quận 7',date:'2026-07-01'},
-    {id:5,type:'Marketing',amount:5200000,branch:'Quận 7',date:'2026-07-01'},
-  ],
+  orders:[],
+  retail:[],
+  warehouse:[],
+  customers:[],
+  pets:[],
+  spaJobs:[],
+  hotelStays:[],
+  expenses:[],
 };
 
 /* ============================= NAV / PERMISSIONS ============================= */
 const NAV_ALL=[
  {id:'phucvukh', label:'Phục vụ khách hàng',icon:'🙋'},
+ {id:'timkhach', label:'Tìm kiếm khách hàng',icon:'🔍'},
  {id:'kinhdoanh',label:'Quản lý kinh doanh',icon:'💰',adminOnly:true},
  {id:'chiphi',   label:'Quản lý chi phí',icon:'💸',adminOnly:true},
  {id:'coso',     label:'Quản lý cơ sở',icon:'🏢',adminOnly:true},
@@ -522,6 +443,7 @@ const NAV_ALL=[
 ];
 const TITLES={
  phucvukh:['Phục vụ khách hàng','Tiếp nhận khách mới, tạo đơn & bắt đầu dịch vụ'],
+ timkhach:['Tìm kiếm khách hàng','Tra cứu nhanh theo tên, SĐT, email hoặc tên thú cưng'],
  kinhdoanh:['Quản lý kinh doanh','Doanh thu, chi phí, lợi nhuận theo cơ sở'],
  chiphi:['Quản lý chi phí','Nhập chi phí theo tháng tại từng cơ sở'],
  coso:['Quản lý cơ sở','Danh sách cơ sở và địa chỉ'],
@@ -906,7 +828,7 @@ window.submitService=()=>{
     if(!confirm('Chưa có ảnh trước khi thực hiện dịch vụ. Vẫn tiếp tục?')) return;
   }
 
-  const orderId=Math.max(...state.orders.map(o=>o.id))+1;
+  const orderId=Math.max(0,...state.orders.map(o=>o.id))+1;
   state.orders.push({id:orderId,service:svc.name,price:finalPrice,branch,customer:custName,date:TODAY,status:'Đang xử lý',staff:currentUser.name,
     type:'dichvu',refName:svc.name,originalPrice:svc.price,discountAmount:discAmount,discountPercent:discPercent});
   svc.used++;
@@ -1087,7 +1009,7 @@ window.submitGoods=()=>{
     const lineDisc = isLast ? remainingDisc : (total? Math.round(lineTotal/total*discAmount) : 0);
     remainingDisc -= lineDisc;
     const finalLine=Math.max(0,lineTotal-lineDisc);
-    const oid=Math.max(...state.orders.map(o=>o.id))+1;
+    const oid=Math.max(0,...state.orders.map(o=>o.id))+1;
     state.orders.push({id:oid,service:'[Hàng hóa] '+rv.name+' x'+it.qty,price:finalLine,branch,customer:custName,date:TODAY,status:'Hoàn thành',staff:currentUser.name,
       type:'hangban',refName:rv.name,originalPrice:lineTotal,discountAmount:lineDisc,discountPercent:discPercent});
     const w=warehouseById(r.warehouseId); if(w) w.stock=Math.max(0,w.stock-it.qty);
@@ -1249,7 +1171,7 @@ window.openAddExpense=()=>{
 window.saveExpense=()=>{
   const type=document.getElementById('ex_type').value.trim();
   if(!type){toast('⚠️ Nhập tên chi phí');return;}
-  const id=state.expenses.length?Math.max(...state.expenses.map(e=>e.id))+1:1;
+  const id=state.expenses.length?Math.max(0,...state.expenses.map(e=>e.id))+1:1;
   state.expenses.push({id,type,branch:document.getElementById('ex_branch').value,amount:+document.getElementById('ex_amount').value||0,date:document.getElementById('ex_date').value||TODAY});
   closeModal(); toast('✅ Đã thêm chi phí'); renderSection('chiphi');
 };
@@ -1305,7 +1227,7 @@ window.saveBranch=()=>{
   const name=document.getElementById('br_name').value.trim();
   if(!name){toast('⚠️ Nhập tên cơ sở');return;}
   if(state.branches.some(b=>b.name===name)){toast('⚠️ Tên cơ sở đã tồn tại');return;}
-  const id=state.branches.length?Math.max(...state.branches.map(b=>b.id))+1:1;
+  const id=state.branches.length?Math.max(0,...state.branches.map(b=>b.id))+1:1;
   state.branches.push({id,name,address:document.getElementById('br_addr').value});
   closeModal(); toast('✅ Đã thêm cơ sở'); renderSection('coso');
 };
@@ -1400,7 +1322,7 @@ window.saveStaff=()=>{
   const username=document.getElementById('s_user').value.trim();
   if(!name){toast('⚠️ Vui lòng nhập họ tên');return;}
   if(username && users.find(u=>u.username===username)){toast('⚠️ Tên đăng nhập đã tồn tại');return;}
-  const id=Math.max(...state.staff.map(s=>s.id))+1;
+  const id=Math.max(0,...state.staff.map(s=>s.id))+1;
   state.staff.push({id,name,position:document.getElementById('s_pos').value||'Nhân viên',branch:document.getElementById('s_branch').value,
     baseSalary:+document.getElementById('s_base').value||0,
     phone:document.getElementById('s_phone').value, username});
@@ -1479,7 +1401,7 @@ window.onOServiceInput=(val)=>{
   if(svc) document.getElementById('o_price').value=svc.price;
 };
 window.saveOrder=()=>{
-  const id=Math.max(...state.orders.map(o=>o.id))+1;
+  const id=Math.max(0,...state.orders.map(o=>o.id))+1;
   const service=document.getElementById('o_service').value;
   const price=+document.getElementById('o_price').value;
   state.orders.push({id,service,price,branch:document.getElementById('o_branch').value,customer:document.getElementById('o_cust').value,
@@ -1712,7 +1634,7 @@ window.saveRetail=()=>{
     state.warehouse.push({id:warehouseId,category:document.getElementById('ret_cat').value||'Khác',name,
       costPrice:+document.getElementById('ret_cost').value||0, stock:+document.getElementById('ret_stock').value||0, image:retPhoto});
   }
-  const id=state.retail.length?Math.max(...state.retail.map(r=>r.id))+1:1;
+  const id=state.retail.length?Math.max(0,...state.retail.map(r=>r.id))+1:1;
   state.retail.push({id,warehouseId,sellPrice,commissionRate,staffRates:{}});
   retPhoto='';
   closeModal(); toast('✅ Đã thêm hàng bán'); renderSection('hangban');
@@ -1825,7 +1747,7 @@ window.saveRestock=(id)=>{
   const date=document.getElementById('rs_date').value||TODAY;
   if(qty<=0){toast('⚠️ Số lượng nhập phải lớn hơn 0');return;}
   w.stock+=qty; w.costPrice=cost;
-  const eid=state.expenses.length?Math.max(...state.expenses.map(e=>e.id))+1:1;
+  const eid=state.expenses.length?Math.max(0,...state.expenses.map(e=>e.id))+1:1;
   state.expenses.push({id:eid,type:'Nhập kho: '+w.name+' (x'+qty+')',branch,amount:cost*qty,date});
   closeModal(); toast('✅ Đã nhập '+qty+' '+w.name+' — đã ghi chi phí tương ứng'); renderSection('khohang');
 };
@@ -1863,13 +1785,13 @@ window.wPhotoChange=(input)=>{
 window.saveWarehouse=()=>{
   const name=document.getElementById('w_name').value.trim();
   if(!name){toast('⚠️ Nhập tên sản phẩm');return;}
-  const id=state.warehouse.length?Math.max(...state.warehouse.map(w=>w.id))+1:1;
+  const id=state.warehouse.length?Math.max(0,...state.warehouse.map(w=>w.id))+1:1;
   const costPrice=+document.getElementById('w_cost').value||0;
   const stock=+document.getElementById('w_stock').value||0;
   const branch=document.getElementById('w_branch').value;
   state.warehouse.push({id,category:document.getElementById('w_cat').value||'Khác',name,costPrice, stock, image:wPhoto});
   if(stock>0){
-    const eid=state.expenses.length?Math.max(...state.expenses.map(e=>e.id))+1:1;
+    const eid=state.expenses.length?Math.max(0,...state.expenses.map(e=>e.id))+1:1;
     state.expenses.push({id:eid,type:'Nhập kho: '+name+' (x'+stock+')',branch,amount:costPrice*stock,date:TODAY});
   }
   wPhoto='';
@@ -2025,10 +1947,102 @@ window.openAddCustomer=()=>{
 window.saveCustomer=()=>{
   const name=document.getElementById('c_name').value.trim();
   if(!name){toast('⚠️ Nhập họ tên khách hàng');return;}
-  const id=Math.max(...state.customers.map(c=>c.id))+1;
+  const id=Math.max(0,...state.customers.map(c=>c.id))+1;
   state.customers.push({id,name,phone:document.getElementById('c_phone').value,address:document.getElementById('c_addr').value,
     email:document.getElementById('c_email').value,tier:document.getElementById('c_tier').value,points:0,bookings:[],history:[]});
   closeModal(); toast('✅ Đã thêm khách hàng '+name); renderSection('khachhang');
+};
+
+/* ---- TÌM KIẾM KHÁCH HÀNG ----
+   Tra cứu khách hàng trên toàn bộ dữ liệu: tên, SĐT, email, địa chỉ, hạng thành viên
+   và cả tên/giống thú cưng. Không phân biệt dấu tiếng Việt (gõ "hung" ra "Hùng",
+   "thuong" ra "Thương"). Bấm "Xem hồ sơ" để mở lại đúng hồ sơ chi tiết dùng chung
+   với trang Quản lý khách hàng. */
+function normVN(s){
+  return (s||'').toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/đ/g,'d')
+    .replace(/\s+/g,' ').trim();
+}
+function escHtml(s){
+  return (s||'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+RENDER.timkhach = () => {
+  return `
+  <div class="card" style="margin-bottom:16px;">
+    <div class="flex between center wrap gap8" style="margin-bottom:12px;">
+      <div>
+        <div class="bold" style="font-size:14px;">🔍 Tra cứu khách hàng</div>
+        <div class="small muted">Tìm theo tên, số điện thoại, email, địa chỉ, hạng thành viên hoặc tên thú cưng — không cần gõ dấu.</div>
+      </div>
+      <span class="pill ok">${state.customers.length} khách hàng</span>
+    </div>
+    <div class="search" style="min-width:0;width:100%;">🔎
+      <input id="custSearchInput" placeholder="VD: Lan Anh · 0901 · gmail · Mochi · Diamond..." autocomplete="off" oninput="runCustomerSearch(this.value)">
+    </div>
+  </div>
+  <div id="custSearchResults">${customerSearchResultsHtml('')}</div>`;
+};
+function customerSearchResultsHtml(q){
+  const raw=(q||'').trim();
+  const nq=normVN(raw);
+  const digitsQ=raw.replace(/\D/g,'');
+  let list = state.customers.map(c=>{
+    const pets=state.pets.filter(p=>p.ownerId===c.id);
+    const petStr=pets.map(p=>p.name+' '+p.breed).join(' ');
+    const phoneDigits=(c.phone||'').replace(/\D/g,'');
+    const matched=[]; let score=0;
+    if(nq){
+      const nName=normVN(c.name);
+      if(nName.includes(nq)){matched.push('tên'); score+=nName.startsWith(nq)?100:60;}
+      if(normVN(petStr).includes(nq)){matched.push('thú cưng'); score+=40;}
+      if(normVN(c.email).includes(nq)){matched.push('email'); score+=20;}
+      if(normVN(c.address).includes(nq)){matched.push('địa chỉ'); score+=15;}
+      if(normVN(c.tier).includes(nq)){matched.push('hạng'); score+=10;}
+    }
+    if(digitsQ.length>=2 && phoneDigits.includes(digitsQ)){matched.push('SĐT'); score+=phoneDigits.startsWith(digitsQ)?80:50;}
+    const isMatch = raw==='' ? true : matched.length>0;
+    return {c,pets,matched,score,isMatch};
+  }).filter(x=>x.isMatch);
+
+  if(raw==='') list.sort((a,b)=>normVN(a.c.name).localeCompare(normVN(b.c.name)));
+  else list.sort((a,b)=>b.score-a.score || normVN(a.c.name).localeCompare(normVN(b.c.name)));
+
+  if(!list.length){
+    return `<div class="card muted small">Không tìm thấy khách hàng nào khớp với "<b>${escHtml(raw)}</b>". Thử tìm bằng tên, số điện thoại, email hoặc tên thú cưng.</div>`;
+  }
+  const header = raw===''
+    ? `<div class="small muted" style="margin-bottom:10px;">Hiển thị tất cả ${list.length} khách hàng (A→Z). Nhập từ khóa để lọc nhanh.</div>`
+    : `<div class="small muted" style="margin-bottom:10px;">Tìm thấy <b>${list.length}</b> khách hàng khớp với "<b>${escHtml(raw)}</b>".</div>`;
+  return header + list.map(customerResultCard).join('');
+}
+function customerResultCard({c,pets,matched}){
+  const orders=customerOrders(c);
+  const totalSpent=orders.reduce((s,o)=>s+o.price,0);
+  return `<div class="card" style="margin-bottom:10px;">
+    <div class="flex between center wrap gap8">
+      <div style="min-width:0;">
+        <div class="bold">👤 ${c.name} <span class="pill ${c.tier.toLowerCase()}">${c.tier}</span></div>
+        <div class="small muted" style="margin-top:2px;">📞 ${c.phone||'—'} &nbsp;·&nbsp; ✉️ ${c.email||'—'}</div>
+        <div class="small muted">📍 ${c.address||'—'}</div>
+      </div>
+      <div class="flex gap8 center wrap" style="justify-content:flex-end;">
+        <div style="text-align:right;">
+          <div class="mono" style="font-size:13px;">${vnd(totalSpent)}</div>
+          <div class="small muted">${c.points} điểm · ${orders.length} giao dịch${c.bookings.length?` · ${c.bookings.length} lịch hẹn`:''}</div>
+        </div>
+        <button class="btn primary sm" onclick="openCustomer(${c.id})">Xem hồ sơ</button>
+      </div>
+    </div>
+    <div class="chip-list" style="margin-top:8px;">
+      ${matched.length?`<span class="chip" style="background:var(--marigold-soft);color:#7A5111;">🔎 Khớp: ${matched.join(', ')}</span>`:''}
+      ${pets.length?pets.map(p=>`<span class="chip">🐾 ${p.name} · ${p.breed}</span>`).join(''):'<span class="muted small">Chưa có thú cưng</span>'}
+    </div>
+  </div>`;
+}
+window.runCustomerSearch=(v)=>{
+  const box=document.getElementById('custSearchResults');
+  if(box) box.innerHTML=customerSearchResultsHtml(v);
 };
 
 /* ---- PET ---- */
@@ -2065,7 +2079,7 @@ window.openAddPet=()=>{
 window.savePet=()=>{
   const name=document.getElementById('pt_name').value.trim();
   if(!name){toast('⚠️ Nhập tên pet');return;}
-  const id=Math.max(...state.pets.map(p=>p.id))+1;
+  const id=Math.max(0,...state.pets.map(p=>p.id))+1;
   state.pets.push({id,name,breed:document.getElementById('pt_breed').value,ownerId:+document.getElementById('pt_owner').value,note:document.getElementById('pt_note').value});
   closeModal(); toast('✅ Đã thêm pet '+name); renderSection('pet');
 };
@@ -2132,7 +2146,7 @@ window.openAddSpaJob=()=>{
   <div style="margin-top:16px;text-align:right;"><button class="btn primary" onclick="saveSpaJob()">Tạo ca</button></div>`);
 };
 window.saveSpaJob=()=>{
-  const id=Math.max(...state.spaJobs.map(j=>j.id))+1;
+  const id=Math.max(0,...state.spaJobs.map(j=>j.id))+1;
   state.spaJobs.push({id,petId:+document.getElementById('sj_pet').value,service:document.getElementById('sj_service').value,status:'Chờ',
     staff:{'Chờ':'','Tắm':'','Cắt':'','Hoàn thiện':''},before:'',after:''});
   closeModal(); toast('✅ Đã tạo ca spa mới'); renderSection('spa');
@@ -2398,7 +2412,7 @@ window.confirmCheckoutHotelStay=(id)=>{
   const hsvc=hotelServiceFor(s);
   const svcName = hsvc ? hsvc.name : `Khách sạn / Ngày — ${s.petType||''} — ${s.tier||''}`;
 
-  const orderId=Math.max(...state.orders.map(x=>x.id))+1;
+  const orderId=Math.max(0,...state.orders.map(x=>x.id))+1;
   state.orders.push({id:orderId,service:svcName,price:finalTotal,branch:s.branch,customer:o.name,date:coDate,status:'Hoàn thành',staff:currentUser.name,
     type:'dichvu',refName:svcName,originalPrice:total,discountAmount:discAmount,discountPercent:discPercent});
   if(hsvc) hsvc.used++;
