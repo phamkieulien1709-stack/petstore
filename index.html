@@ -6,6 +6,7 @@
 <title>CPET × PAPET — Quản Lý Nội Bộ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
 <style>
 :root{
   --bg:#F4F6F0; --surface:#FFFFFF; --ink:#16302C; --ink-soft:#4E6461; --muted:#7C8B87; --line:#E2E6DC;
@@ -332,6 +333,7 @@ window.doLogin=()=>{
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('appShell').classList.remove('hidden');
   document.getElementById('whoami').innerHTML=`Đăng nhập: <b>${found.name}</b> <span class="role-tag ${found.role==='staff'?'staff':''}">${found.role==='admin'?'ADMIN':'NHÂN VIÊN'}</span> &nbsp;·&nbsp; <a class="linklike" onclick="doLogout()">Đăng xuất</a>`;
+  initFirebaseSync();
   goTo(found.role==='admin'?'kinhdoanh':'phucvukh');
 };
 window.doLogout=()=>{
@@ -603,14 +605,15 @@ window.advanceMyJob=(id,status)=>{
   j.status=status;
   // Không tự gán người đang cập nhật vào khâu mới — mỗi khâu (Tắm/Cắt/Hoàn thiện...) cần được nhận riêng,
   // để đúng thực tế: khâu Tắm có thể là NV A, khâu Cắt lại là NV B.
-  if(status==='Hoàn thiện'){ j.completedDate=j.completedDate||TODAY; if(j.orderId){const o=state.orders.find(x=>x.id===j.orderId); if(o)o.status='Hoàn thành';} toast('🎉 Đã chuyển sang Hoàn thiện — nếu chưa có người nhận, ca sẽ hiện lại ở hàng đợi'); }
-  else { j.completedDate=null; toast('✅ Đã chuyển sang khâu "'+status+'" — khâu này đang chờ nhân viên nhận'); }
+  if(status==='Hoàn thiện'){ j.completedDate=j.completedDate||TODAY; if(j.orderId){const o=state.orders.find(x=>x.id===j.orderId); if(o)o.status='Hoàn thành';} saveToFirebase(); toast('🎉 Đã chuyển sang Hoàn thiện — nếu chưa có người nhận, ca sẽ hiện lại ở hàng đợi'); }
+  else { j.completedDate=null; saveToFirebase(); toast('✅ Đã chuyển sang khâu "'+status+'" — khâu này đang chờ nhân viên nhận'); }
   renderSection(currentSection);
 };
 window.releaseSpaJob=(id)=>{
   const j=state.spaJobs.find(x=>x.id===id);
   if(j.staff[j.status]!==currentUser.name){toast('⚠️ Bạn không phụ trách khâu này');return;}
   j.staff[j.status]='';
+  saveToFirebase();
   toast('↩️ Đã nhả khâu "'+j.status+'" của '+petById(j.petId).name+' — nhân viên khác có thể nhận lại');
   renderSection(currentSection);
 };
@@ -840,7 +843,7 @@ window.submitService=()=>{
     before:wizPhoto,after:'',date:TODAY,orderId,completedDate:null});
 
   closeModal();
-  toast('✅ Đã tiếp nhận '+petById(petId).name+' — dịch vụ "'+svc.name+'" đang ở hàng đợi');
+  saveToFirebase(); toast('✅ Đã tiếp nhận '+petById(petId).name+' — dịch vụ "'+svc.name+'" đang ở hàng đợi');
   renderSection('phucvukh');
 };
 
@@ -1016,7 +1019,7 @@ window.submitGoods=()=>{
   });
   gdCart=[];
   closeModal();
-  toast('✅ Đã bán hàng cho '+custName);
+  saveToFirebase(); toast('✅ Đã bán hàng cho '+custName);
   renderSection('phucvukh');
 };
 
@@ -1173,7 +1176,7 @@ window.saveExpense=()=>{
   if(!type){toast('⚠️ Nhập tên chi phí');return;}
   const id=state.expenses.length?Math.max(0,...state.expenses.map(e=>e.id))+1:1;
   state.expenses.push({id,type,branch:document.getElementById('ex_branch').value,amount:+document.getElementById('ex_amount').value||0,date:document.getElementById('ex_date').value||TODAY});
-  closeModal(); toast('✅ Đã thêm chi phí'); renderSection('chiphi');
+  saveToFirebase(); closeModal(); toast('✅ Đã thêm chi phí'); renderSection('chiphi');
 };
 window.editExpense=(id)=>{
   const e=state.expenses.find(x=>x.id===id);
@@ -1193,12 +1196,12 @@ window.saveEditExpense=(id)=>{
   if(!type){toast('⚠️ Tên chi phí không được để trống');return;}
   e.type=type; e.branch=document.getElementById('eex_branch').value;
   e.amount=+document.getElementById('eex_amount').value||0; e.date=document.getElementById('eex_date').value||e.date;
-  closeModal(); toast('✅ Đã cập nhật chi phí'); renderSection('chiphi');
+  saveToFirebase(); closeModal(); toast('✅ Đã cập nhật chi phí'); renderSection('chiphi');
 };
 window.deleteExpense=(id)=>{
   if(!confirm('Xóa chi phí này?')) return;
   state.expenses=state.expenses.filter(e=>e.id!==id);
-  toast('🗑️ Đã xóa chi phí'); renderSection('chiphi');
+  saveToFirebase(); toast('🗑️ Đã xóa chi phí'); renderSection('chiphi');
 };
 
 /* ---- QUẢN LÝ CƠ SỞ (admin only) ---- */
@@ -1229,7 +1232,7 @@ window.saveBranch=()=>{
   if(state.branches.some(b=>b.name===name)){toast('⚠️ Tên cơ sở đã tồn tại');return;}
   const id=state.branches.length?Math.max(0,...state.branches.map(b=>b.id))+1:1;
   state.branches.push({id,name,address:document.getElementById('br_addr').value});
-  closeModal(); toast('✅ Đã thêm cơ sở'); renderSection('coso');
+  saveToFirebase(); closeModal(); toast('✅ Đã thêm cơ sở'); renderSection('coso');
 };
 window.editBranch=(id)=>{
   const b=state.branches.find(x=>x.id===id);
@@ -1252,7 +1255,7 @@ window.saveEditBranch=(id)=>{
     state.orders.forEach(o=>{if(o.branch===oldName)o.branch=name;});
     state.expenses.forEach(e=>{if(e.branch===oldName)e.branch=name;});
   }
-  closeModal(); toast('✅ Đã cập nhật cơ sở'); renderSection('coso');
+  saveToFirebase(); closeModal(); toast('✅ Đã cập nhật cơ sở'); renderSection('coso');
 };
 window.deleteBranch=(id)=>{
   const b=state.branches.find(x=>x.id===id);
@@ -1260,7 +1263,7 @@ window.deleteBranch=(id)=>{
   if(inUse){toast('⚠️ Cơ sở "'+b.name+'" đang được dùng bởi nhân viên/đơn hàng/chi phí — không thể xóa.');return;}
   if(!confirm('Xóa cơ sở "'+b.name+'"?')) return;
   state.branches=state.branches.filter(x=>x.id!==id);
-  toast('🗑️ Đã xóa cơ sở'); renderSection('coso');
+  saveToFirebase(); toast('🗑️ Đã xóa cơ sở'); renderSection('coso');
 };
 // re-render body after date change without full page reset
 const _origRenderSection = null;
@@ -1329,7 +1332,7 @@ window.saveStaff=()=>{
   if(username){
     users.push({username,password:document.getElementById('s_pass').value||'123456',role:'staff',name,staffId:id});
   }
-  closeModal(); toast('✅ Đã thêm nhân viên '+name+(username?' — tài khoản @'+username:'')); renderSection('nhanvien');
+  saveToFirebase(); closeModal(); toast('✅ Đã thêm nhân viên '+name+(username?' — tài khoản @'+username:'')); renderSection('nhanvien');
 };
 window.editStaff=(id)=>{
   const s=state.staff.find(x=>x.id===id);
@@ -1349,7 +1352,7 @@ window.saveEditStaff=(id)=>{
   s.branch=document.getElementById('e_branch').value;
   s.phone=document.getElementById('e_phone').value;
   s.baseSalary=+document.getElementById('e_base').value||0;
-  closeModal(); toast('✅ Đã cập nhật nhân viên'); renderSection('nhanvien');
+  saveToFirebase(); closeModal(); toast('✅ Đã cập nhật nhân viên'); renderSection('nhanvien');
 };
 window.deleteStaff=(id)=>{
   const s=state.staff.find(x=>x.id===id);
@@ -1357,7 +1360,7 @@ window.deleteStaff=(id)=>{
   const uidx=users.findIndex(u=>u.staffId===id);
   if(uidx>-1) users.splice(uidx,1);
   state.staff=state.staff.filter(x=>x.id!==id);
-  toast('🗑️ Đã xóa nhân viên '+s.name); renderSection('nhanvien');
+  saveToFirebase(); toast('🗑️ Đã xóa nhân viên '+s.name); renderSection('nhanvien');
 };
 
 /* ---- ĐƠN HÀNG ---- */
@@ -1407,7 +1410,7 @@ window.saveOrder=()=>{
   state.orders.push({id,service,price,branch:document.getElementById('o_branch').value,customer:document.getElementById('o_cust').value,
     staff:document.getElementById('o_staff').value,date:document.getElementById('o_date').value,status:'Đang xử lý',
     type:'dichvu',refName:service,originalPrice:price,discountAmount:0,discountPercent:0});
-  closeModal(); toast('✅ Đã thêm đơn hàng'); renderSection('donhang');
+  saveToFirebase(); closeModal(); toast('✅ Đã thêm đơn hàng'); renderSection('donhang');
 };
 window.editOrder=(id)=>{
   const o=state.orders.find(x=>x.id===id);
@@ -1433,12 +1436,12 @@ window.saveEditOrder=(id)=>{
   o.staff=document.getElementById('eo_staff').value;
   o.date=document.getElementById('eo_date').value;
   o.status=document.getElementById('eo_status').value;
-  closeModal(); toast('✅ Đã cập nhật đơn hàng'); renderSection('donhang');
+  saveToFirebase(); closeModal(); toast('✅ Đã cập nhật đơn hàng'); renderSection('donhang');
 };
 window.deleteOrder=(id)=>{
   if(!confirm('Xóa đơn hàng này?')) return;
   state.orders=state.orders.filter(o=>o.id!==id);
-  toast('🗑️ Đã xóa đơn hàng'); renderSection('donhang');
+  saveToFirebase(); toast('🗑️ Đã xóa đơn hàng'); renderSection('donhang');
 };
 window.filterTable=(tableId,q)=>{
   q=q.toLowerCase();
@@ -1513,7 +1516,7 @@ window.saveService=()=>{
   if(!name){toast('⚠️ Nhập tên dịch vụ');return;}
   const id=Math.max(0,...state.services.map(s=>s.id))+1;
   state.services.push({id,name,price:+document.getElementById('sv_price').value||0,used:0,commissionRate:+document.getElementById('sv_comm').value||0,staffRates:{}});
-  closeModal(); toast('✅ Đã thêm dịch vụ'); renderSection('dichvu');
+  saveToFirebase(); closeModal(); toast('✅ Đã thêm dịch vụ'); renderSection('dichvu');
 };
 window.editService=(id)=>{
   const s=state.services.find(x=>x.id===id);
@@ -1543,13 +1546,13 @@ window.saveEditService=(id)=>{
     const v=el.value.trim();
     if(v==='') delete s.staffRates[st.id]; else s.staffRates[st.id]=+v;
   });
-  closeModal(); toast('✅ Đã cập nhật dịch vụ'); renderSection('dichvu');
+  saveToFirebase(); closeModal(); toast('✅ Đã cập nhật dịch vụ'); renderSection('dichvu');
 };
 window.deleteService=(id)=>{
   const s=state.services.find(x=>x.id===id);
   if(!confirm('Xóa dịch vụ "'+s.name+'"?')) return;
   state.services=state.services.filter(x=>x.id!==id);
-  toast('🗑️ Đã xóa dịch vụ'); renderSection('dichvu');
+  saveToFirebase(); toast('🗑️ Đã xóa dịch vụ'); renderSection('dichvu');
 };
 
 /* ---- HÀNG BÁN (liên kết bắt buộc với Kho hàng) ---- */
@@ -1637,7 +1640,7 @@ window.saveRetail=()=>{
   const id=state.retail.length?Math.max(0,...state.retail.map(r=>r.id))+1:1;
   state.retail.push({id,warehouseId,sellPrice,commissionRate,staffRates:{}});
   retPhoto='';
-  closeModal(); toast('✅ Đã thêm hàng bán'); renderSection('hangban');
+  saveToFirebase(); closeModal(); toast('✅ Đã thêm hàng bán'); renderSection('hangban');
 };
 window.editRetail=(retailId)=>{
   const r=state.retail.find(x=>x.id===retailId);
@@ -1687,14 +1690,14 @@ window.saveEditRetail=(retailId)=>{
     if(v==='') delete r.staffRates[st.id]; else r.staffRates[st.id]=+v;
   });
   erPhoto=null;
-  closeModal(); toast('✅ Đã cập nhật hàng bán'); renderSection('hangban');
+  saveToFirebase(); closeModal(); toast('✅ Đã cập nhật hàng bán'); renderSection('hangban');
 };
 window.deleteRetail=(retailId)=>{
   const r=state.retail.find(x=>x.id===retailId);
   const rv=retailView(r);
   if(!confirm('Ngừng bán "'+rv.name+'"? Mặt hàng vẫn còn trong Kho hàng, chỉ gỡ khỏi danh mục Hàng bán.')) return;
   state.retail=state.retail.filter(x=>x.id!==retailId);
-  toast('🗑️ Đã gỡ khỏi Hàng bán'); renderSection('hangban');
+  saveToFirebase(); toast('🗑️ Đã gỡ khỏi Hàng bán'); renderSection('hangban');
 };
 
 /* ---- KHO HÀNG (nguồn dữ liệu gốc — hàng bán tham chiếu tới đây) ---- */
@@ -1749,7 +1752,7 @@ window.saveRestock=(id)=>{
   w.stock+=qty; w.costPrice=cost;
   const eid=state.expenses.length?Math.max(0,...state.expenses.map(e=>e.id))+1:1;
   state.expenses.push({id:eid,type:'Nhập kho: '+w.name+' (x'+qty+')',branch,amount:cost*qty,date});
-  closeModal(); toast('✅ Đã nhập '+qty+' '+w.name+' — đã ghi chi phí tương ứng'); renderSection('khohang');
+  saveToFirebase(); closeModal(); toast('✅ Đã nhập '+qty+' '+w.name+' — đã ghi chi phí tương ứng'); renderSection('khohang');
 };
 window.deleteWarehouse=(id)=>{
   const w=warehouseById(id);
@@ -1757,7 +1760,7 @@ window.deleteWarehouse=(id)=>{
   if(linked){toast('⚠️ Mặt hàng đang được bán tại Hàng bán — gỡ khỏi Hàng bán trước khi xóa khỏi Kho.');return;}
   if(!confirm('Xóa "'+w.name+'" khỏi kho hàng?')) return;
   state.warehouse=state.warehouse.filter(x=>x.id!==id);
-  toast('🗑️ Đã xóa khỏi kho'); renderSection('khohang');
+  saveToFirebase(); toast('🗑️ Đã xóa khỏi kho'); renderSection('khohang');
 };
 window.openAddWarehouse=()=>{
   wPhoto='';
@@ -1795,7 +1798,7 @@ window.saveWarehouse=()=>{
     state.expenses.push({id:eid,type:'Nhập kho: '+name+' (x'+stock+')',branch,amount:costPrice*stock,date:TODAY});
   }
   wPhoto='';
-  closeModal(); toast('✅ Đã thêm vào kho'); renderSection('khohang');
+  saveToFirebase(); closeModal(); toast('✅ Đã thêm vào kho'); renderSection('khohang');
 };
 window.editWarehouse=(id)=>{
   const w=warehouseById(id);
@@ -1829,7 +1832,7 @@ window.saveEditWarehouse=(id)=>{
   w.stock=+document.getElementById('ew_stock').value||0;
   if(ewPhoto) w.image=ewPhoto;
   ewPhoto=null;
-  closeModal(); toast('✅ Đã cập nhật kho hàng'); renderSection('khohang');
+  saveToFirebase(); closeModal(); toast('✅ Đã cập nhật kho hàng'); renderSection('khohang');
 };
 
 /* ---- KHÁCH HÀNG ---- */
@@ -1908,7 +1911,7 @@ window.saveEditCustomer=(id)=>{
   c.name=name; c.phone=document.getElementById('ec_phone').value; c.email=document.getElementById('ec_email').value;
   c.tier=document.getElementById('ec_tier').value; c.points=+document.getElementById('ec_points').value||0;
   c.address=document.getElementById('ec_addr').value;
-  closeModal(); toast('✅ Đã cập nhật hồ sơ khách hàng'); renderSection('khachhang');
+  saveToFirebase(); closeModal(); toast('✅ Đã cập nhật hồ sơ khách hàng'); renderSection('khachhang');
 };
 window.deleteCustomer=(id)=>{
   const c=ownerById(id);
@@ -1916,7 +1919,7 @@ window.deleteCustomer=(id)=>{
   if(!confirm('Xóa khách hàng "'+c.name+'"?'+(petCount?' ('+petCount+' thú cưng liên quan cũng sẽ bị xóa)':''))) return;
   state.pets=state.pets.filter(p=>p.ownerId!==id);
   state.customers=state.customers.filter(x=>x.id!==id);
-  toast('🗑️ Đã xóa khách hàng '+c.name); renderSection('khachhang');
+  saveToFirebase(); toast('🗑️ Đã xóa khách hàng '+c.name); renderSection('khachhang');
 };
 window.openAddBooking=(custId)=>{
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
@@ -1930,7 +1933,7 @@ window.openAddBooking=(custId)=>{
 window.saveBooking=(custId)=>{
   const c=ownerById(custId);
   c.bookings.push({date:document.getElementById('bk_date').value,service:document.getElementById('bk_service').value,time:document.getElementById('bk_time').value||'—'});
-  closeModal(); toast('✅ Đã đặt lịch cho '+c.name); openCustomer(custId);
+  saveToFirebase(); closeModal(); toast('✅ Đã đặt lịch cho '+c.name); openCustomer(custId);
 };
 window.openAddCustomer=()=>{
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
@@ -1950,7 +1953,7 @@ window.saveCustomer=()=>{
   const id=Math.max(0,...state.customers.map(c=>c.id))+1;
   state.customers.push({id,name,phone:document.getElementById('c_phone').value,address:document.getElementById('c_addr').value,
     email:document.getElementById('c_email').value,tier:document.getElementById('c_tier').value,points:0,bookings:[],history:[]});
-  closeModal(); toast('✅ Đã thêm khách hàng '+name); renderSection('khachhang');
+  saveToFirebase(); closeModal(); toast('✅ Đã thêm khách hàng '+name); renderSection('khachhang');
 };
 
 /* ---- TÌM KIẾM KHÁCH HÀNG ----
@@ -2064,7 +2067,7 @@ window.deletePet=(id)=>{
   const p=petById(id);
   if(!confirm('Xóa pet "'+p.name+'"?')) return;
   state.pets=state.pets.filter(x=>x.id!==id);
-  toast('🗑️ Đã xóa pet '+p.name); renderSection('pet');
+  saveToFirebase(); toast('🗑️ Đã xóa pet '+p.name); renderSection('pet');
 };
 window.openAddPet=()=>{
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
@@ -2081,7 +2084,7 @@ window.savePet=()=>{
   if(!name){toast('⚠️ Nhập tên pet');return;}
   const id=Math.max(0,...state.pets.map(p=>p.id))+1;
   state.pets.push({id,name,breed:document.getElementById('pt_breed').value,ownerId:+document.getElementById('pt_owner').value,note:document.getElementById('pt_note').value});
-  closeModal(); toast('✅ Đã thêm pet '+name); renderSection('pet');
+  saveToFirebase(); closeModal(); toast('✅ Đã thêm pet '+name); renderSection('pet');
 };
 
 /* ---- SPA ---- */
@@ -2121,9 +2124,9 @@ window.setSpaStatus=(id,status)=>{
   const j=state.spaJobs.find(x=>x.id===id); j.status=status;
   if(status==='Hoàn thiện'){ j.completedDate=j.completedDate||'2026-07-05'; if(j.orderId){const o=state.orders.find(x=>x.id===j.orderId); if(o)o.status='Hoàn thành';} }
   else j.completedDate=null;
-  toast('✅ Cập nhật trạng thái: '+status); renderSection(currentSection);
+  saveToFirebase(); toast('✅ Cập nhật trạng thái: '+status); renderSection(currentSection);
 };
-window.setSpaStaff=(id,name)=>{const j=state.spaJobs.find(x=>x.id===id); j.staff[j.status]=name; toast('✅ Đã gán nhân viên khâu '+j.status); renderSection(currentSection);};
+window.setSpaStaff=(id,name)=>{const j=state.spaJobs.find(x=>x.id===id); j.staff[j.status]=name; saveToFirebase(); toast('✅ Đã gán nhân viên khâu '+j.status); renderSection(currentSection);};
 window.claimSpaJob=(id)=>{
   const j=state.spaJobs.find(x=>x.id===id);
   if(j.staff[j.status]){toast('ℹ️ Khâu này đã có người nhận: '+j.staff[j.status]);return;}
@@ -2134,7 +2137,7 @@ window.claimSpaJob=(id)=>{
 window.setSpaPhoto=(id,which,input)=>{
   readImage(input,(dataUrl)=>{
     state.spaJobs.find(j=>j.id===id)[which]=dataUrl;
-    renderSection(currentSection); toast('🖼️ Đã lưu ảnh '+(which==='before'?'trước':'sau'));
+    saveToFirebase(); renderSection(currentSection); toast('🖼️ Đã lưu ảnh '+(which==='before'?'trước':'sau'));
   });
 };
 window.openAddSpaJob=()=>{
@@ -2149,7 +2152,7 @@ window.saveSpaJob=()=>{
   const id=Math.max(0,...state.spaJobs.map(j=>j.id))+1;
   state.spaJobs.push({id,petId:+document.getElementById('sj_pet').value,service:document.getElementById('sj_service').value,status:'Chờ',
     staff:{'Chờ':'','Tắm':'','Cắt':'','Hoàn thiện':''},before:'',after:''});
-  closeModal(); toast('✅ Đã tạo ca spa mới'); renderSection('spa');
+  saveToFirebase(); closeModal(); toast('✅ Đã tạo ca spa mới'); renderSection('spa');
 };
 
 /* ---- QUẢN LÝ KHÁCH SẠN (theo dõi ký gửi thú cưng, lịch sử lưu trú & chi phí) ----
@@ -2350,7 +2353,7 @@ window.saveHotelStay=()=>{
   const notes=document.getElementById('hs_notes').value;
   const id=Math.max(0,...state.hotelStays.map(s=>s.id))+1;
   state.hotelStays.push({id,petId,checkIn,checkOut:null,pricePerDay:svc.price,petType:svc.petType,tier:svc.tier,branch,notes,paid:0,discountAmount:0,discountPercent:0,orderId:null,status:'Đang lưu trú',staff:currentUser.name});
-  closeModal(); toast('✅ Đã nhận ký gửi '+petById(petId).name); renderSection('khachsan');
+  saveToFirebase(); closeModal(); toast('✅ Đã nhận ký gửi '+petById(petId).name); renderSection('khachsan');
 };
 window.openCheckoutHotelStay=(id)=>{
   const s=state.hotelStays.find(x=>x.id===id);
@@ -2419,7 +2422,7 @@ window.confirmCheckoutHotelStay=(id)=>{
 
   s.checkOut=coDate; s.paid=finalTotal; s.discountAmount=discAmount; s.discountPercent=discPercent; s.orderId=orderId; s.status='Đã trả';
 
-  closeModal(); toast('✅ Đã trả '+p.name+' — thu '+vnd(finalTotal)); renderSection('khachsan');
+  saveToFirebase(); closeModal(); toast('✅ Đã trả '+p.name+' — thu '+vnd(finalTotal)); renderSection('khachsan');
 };
 
 
@@ -2507,6 +2510,60 @@ window.saveNewStaffAccount=(staffId)=>{
 function renderSection(id){
   document.getElementById('content').innerHTML = RENDER[id] ? RENDER[id]() : `<div class="card">Đang phát triển...</div>`;
 }
+</script>
+
+<!-- Firebase SDK — đặt cuối file để state đã sẵn sàng -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  const firebaseConfig = {
+    apiKey: "AIzaSyAzQ1IVe-_yaydrgO7DYXS21T08fFlPZBo",
+    authDomain: "petstore-9e95b.firebaseapp.com",
+    projectId: "petstore-9e95b",
+    storageBucket: "petstore-9e95b.firebasestorage.app",
+    messagingSenderId: "125009997415",
+    appId: "1:125009997415:web:beb7c0cf1afc9453b06ec2"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const DB_DOC = db.collection('cpet').doc('state');
+
+  window.saveToFirebase = () => {
+    DB_DOC.set({
+      branches:   state.branches,
+      staff:      state.staff,
+      orders:     state.orders,
+      customers:  state.customers,
+      pets:       state.pets,
+      spaJobs:    state.spaJobs,
+      hotelStays: state.hotelStays,
+      expenses:   state.expenses,
+      warehouse:  state.warehouse,
+      retail:     state.retail,
+    }).catch(e => console.error('Firebase save error:', e));
+  };
+
+  window.initFirebaseSync = () => {
+    DB_DOC.onSnapshot(snap => {
+      if (!snap.exists) return;
+      const d = snap.data();
+      if (d.branches)   state.branches   = d.branches;
+      if (d.staff)      state.staff      = d.staff;
+      if (d.orders)     state.orders     = d.orders;
+      if (d.customers)  state.customers  = d.customers;
+      if (d.pets)       state.pets       = d.pets;
+      if (d.spaJobs)    state.spaJobs    = d.spaJobs;
+      if (d.hotelStays) state.hotelStays = d.hotelStays;
+      if (d.expenses)   state.expenses   = d.expenses;
+      if (d.warehouse)  state.warehouse  = d.warehouse;
+      if (d.retail)     state.retail     = d.retail;
+      if (typeof currentSection !== 'undefined' && currentSection && typeof renderSection === 'function') {
+        renderSection(currentSection);
+      }
+    }, e => console.error('Firebase sync error:', e));
+  };
+})();
 </script>
 </body>
 </html>
