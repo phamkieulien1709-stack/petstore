@@ -332,8 +332,8 @@ window.doLogin=()=>{
   currentUser=found;
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('appShell').classList.remove('hidden');
-  const roleTagClass = found.role==='staff'?'staff': found.role==='cskh'?'staff':'';
-  const roleTagText  = found.role==='admin'?'ADMIN': found.role==='cskh'?'CSKH':'NHÂN VIÊN';
+  const roleTagClass = ['staff','cskh','hocvien'].includes(found.role)?'staff':'';
+  const roleTagText  = found.role==='admin'?'ADMIN':found.role==='cskh'?'CSKH':found.role==='hocvien'?'HỌC VIÊN':'NHÂN VIÊN';
   document.getElementById('whoami').innerHTML=`Đăng nhập: <b>${found.name}</b> <span class="role-tag ${roleTagClass}">${roleTagText}</span> &nbsp;·&nbsp; <a class="linklike" onclick="doLogout()">Đăng xuất</a>`;
   initFirebaseSync();
   goTo(found.role==='admin' ? 'kinhdoanh' : 'phucvukh');
@@ -432,7 +432,7 @@ const state = {
 
 /* ============================= NAV / PERMISSIONS ============================= */
 const NAV_ALL=[
- {id:'phucvukh', label:'Phục vụ khách hàng',  icon:'🙋', roles:['admin','cskh','staff']},
+ {id:'phucvukh', label:'Phục vụ khách hàng',  icon:'🙋', roles:['admin','cskh','staff','hocvien']},
  {id:'kinhdoanh',label:'Quản lý kinh doanh',  icon:'💰', roles:['admin']},
  {id:'chiphi',   label:'Quản lý chi phí',      icon:'💸', roles:['admin']},
  {id:'coso',     label:'Quản lý cơ sở',        icon:'🏢', roles:['admin']},
@@ -446,7 +446,7 @@ const NAV_ALL=[
  {id:'pet',      label:'Quản lý Pet',          icon:'🐾', roles:['admin','cskh']},
  {id:'spa',      label:'Quản lý Spa',          icon:'🛁', roles:['admin','cskh']},
  {id:'khachsan', label:'Quản lý Khách sạn',   icon:'🏨', roles:['admin','cskh']},
- {id:'luongtoi', label:'Bảng lương',           icon:'💵', roles:['cskh','staff']},
+ {id:'luongtoi', label:'Bảng lương',           icon:'💵', roles:['cskh','staff','hocvien']},
 ];
 const TITLES={
  phucvukh:['Phục vụ khách hàng','Tiếp nhận khách mới, tạo đơn & bắt đầu dịch vụ'],
@@ -467,9 +467,10 @@ const TITLES={
  khachsan:['Quản lý Khách sạn','Theo dõi thú cưng đang ký gửi, lịch sử lưu trú & chi phí đã thanh toán'],
 };
 
-const ROLE_LABEL={'admin':'Quản trị viên','staff':'Nhân viên','cskh':'Chăm sóc KH'};
+const ROLE_LABEL={'admin':'Quản trị viên','staff':'Nhân viên','cskh':'Chăm sóc KH','hocvien':'Học viên'};
 function canSeeNav(it){ return (it.roles||[]).includes(currentUser.role); }
 function renderSidebar(active){
+  if(!currentUser) return;
   const sb=document.getElementById('sidebar');
   const items=NAV_ALL.filter(canSeeNav);
   let html=`<div class="brand"><div class="brand-mark">🐾</div><div class="brand-text">CPET × PAPET<span>Quản lý nội bộ</span></div></div>`;
@@ -541,6 +542,9 @@ function jobCommissionForStaff(j, staffName){
   const svc=serviceByRefName(j.service);
   const st=staffByName(staffName);
   if(!svc||!st) return 0;
+  // Học viên không có hoa hồng
+  const u=users.find(x=>x.staffId===st.id);
+  if(u&&u.role==='hocvien') return 0;
   let total=0;
   (svc.commissionSteps||[]).forEach(step=>{
     if(j.staff[step.stage]===staffName){
@@ -598,6 +602,8 @@ function queueCard(j){
   const p=petById(j.petId), o=ownerById(p.ownerId), claimed=j.staff[j.status];
   const isMine = claimed===currentUser.name;
   const isWaitingOpen = !claimed;
+  const isAdmin = currentUser.role==='admin';
+  const assignableUsers = state.staff.filter(s=>{ const u=users.find(x=>x.staffId===s.id); return u&&['staff','hocvien','cskh'].includes(u.role); });
   return `<div class="card" style="margin-bottom:10px;">
     <div class="flex between center wrap gap8">
       <div>
@@ -606,9 +612,17 @@ function queueCard(j){
       </div>
       <div class="flex gap8 center">
         <span class="pill status-tam">${j.status}</span>
-        ${isWaitingOpen ? `<button class="btn primary sm" onclick="claimSpaJob(${j.id})">🙋 Nhận việc</button>`
-          : isMine ? `<span class="pill ok">✅ Bạn đang phụ trách</span><button class="btn ghost sm" onclick="releaseSpaJob(${j.id})">↩️ Nhả việc</button>`
-          : `<span class="small muted">Đang được ${claimed||'—'} thực hiện</span>`}
+        ${isAdmin
+          ? `<select style="min-width:130px;font-size:12px;" onchange="adminAssignJob(${j.id},this.value)">
+               <option value="">— Chỉ định người nhận —</option>
+               ${assignableUsers.map(s=>`<option value="${s.name}" ${claimed===s.name?'selected':''}>${s.name}</option>`).join('')}
+               ${claimed?`<option value="__clear__">✕ Bỏ chỉ định</option>`:''}
+             </select>`
+          : isWaitingOpen
+            ? `<button class="btn primary sm" onclick="claimSpaJob(${j.id})">🙋 Nhận việc</button>`
+            : isMine
+              ? `<span class="pill ok">✅ Bạn đang phụ trách</span><button class="btn ghost sm" onclick="releaseSpaJob(${j.id})">↩️ Nhả việc</button>`
+              : `<span class="small muted">Đang được ${claimed||'—'} thực hiện</span>`}
       </div>
     </div>
     <div class="flex gap8 wrap" style="margin-top:10px;">
@@ -1179,6 +1193,7 @@ RENDER.luongtoi = () => {
 function luongToiBody(my){
   const from=document.getElementById('lt_from')?document.getElementById('lt_from').value:'2026-06-01';
   const to=document.getElementById('lt_to')?document.getElementById('lt_to').value:'2026-07-05';
+  const isHocVien = currentUser.role==='hocvien';
 
   // HH dịch vụ: từng bước của spaJob trong khoảng thời gian
   const myJobs=state.spaJobs.filter(j=>{
@@ -1211,15 +1226,19 @@ function luongToiBody(my){
   return `
   <div class="grid cols-3">
     ${kpiCard('💼','bg-teal',vnd(my.baseSalary),'Lương cứng (theo tháng)')}
-    ${kpiCard('🎯','bg-pink',vnd(totalCommission),'Hoa hồng trong khoảng đã chọn')}
-    ${kpiCard('💰','bg-blue',vnd(my.baseSalary+totalCommission),'Thu nhập ước tính')}
+    ${isHocVien?'':kpiCard('🎯','bg-pink',vnd(totalCommission),'Hoa hồng trong khoảng đã chọn')}
+    ${isHocVien?'':kpiCard('💰','bg-blue',vnd(my.baseSalary+totalCommission),'Thu nhập ước tính')}
   </div>
+  ${isHocVien?`<div class="card" style="margin-top:14px;background:var(--marigold-soft);border-color:var(--marigold);">
+    <div class="small" style="color:#7A5111;">ℹ️ Tài khoản <b>Học viên</b> không được tính hoa hồng. Chỉ hiển thị lương cứng.</div>
+  </div>`:`
   <div class="grid cols-2" style="margin-top:14px;">
     ${kpiCard('✂️','bg-blue',vnd(svcCommission),'HH từ dịch vụ Spa')}
     ${kpiCard('🛍️','bg-marigold',vnd(goodsCommission),'HH từ hàng bán')}
-  </div>
+  </div>`}
 
-  <h2 class="h">✂️ Chi tiết hoa hồng dịch vụ (theo bước)</h2>
+  ${isHocVien?'':`<h2 class="h">✂️ Chi tiết hoa hồng dịch vụ (theo bước)</h2>`}
+  ${isHocVien?'':`
   <div class="tblwrap"><div class="scroller"><table>
     <tr><th>Ngày</th><th>Dịch vụ</th><th>Khách hàng</th><th>Bước đã nhận</th><th>Giá dịch vụ</th><th>%</th><th>Hoa hồng</th></tr>
     ${svcRows.length?svcRows.map(r=>`<tr>
@@ -1239,6 +1258,7 @@ function luongToiBody(my){
     }).join(''):'<tr><td colspan="6" class="muted small">Chưa có đơn hàng bán nào.</td></tr>'}
   </table></div></div>
   <div class="small muted" style="margin-top:10px;">* HH dịch vụ: tính theo bước NV đã nhận (claim) × % quy định. HH hàng bán: tính theo % trên đơn hàng.</div>
+  `}
   `;
 }
 
@@ -2362,18 +2382,27 @@ function spaCard(j){
   const p=petById(j.petId), o=ownerById(p.ownerId);
   const claimed = j.staff[j.status];
   const stages=jobStages(j);
+  const isAdmin=currentUser.role==='admin';
+  const assignableUsers=state.staff.filter(s=>{ const u=users.find(x=>x.staffId===s.id); return u&&['staff','hocvien','cskh'].includes(u.role); });
+  // Admin sees assign dropdowns for ALL stages; staff/hocvien sees claim button for current stage only
+  const stageAssignRows = isAdmin ? stages.map(s=>`
+    <div style="margin-bottom:6px;">
+      <label class="f" style="margin-bottom:2px;">${s} ${j.staff[s]?'<span class="pill ok" style="font-size:10px;">'+j.staff[s]+'</span>':'<span class="pill silver" style="font-size:10px;">Chưa nhận</span>'}</label>
+      <select style="width:100%;font-size:12px;" onchange="adminAssignJobStage(${j.id},'${s}',this.value)">
+        <option value="">— chỉ định —</option>
+        ${assignableUsers.map(st=>`<option value="${st.name}" ${j.staff[s]===st.name?'selected':''}>${st.name}</option>`).join('')}
+        ${j.staff[s]?`<option value="__clear__">✕ Bỏ chỉ định</option>`:''}
+      </select>
+    </div>`).join('') : '';
   return `<div class="kcard">
     <div class="name">🐾 ${p.name}</div>
     <div class="meta">${o.name} · ${j.service}${j.date?' · '+j.date:''}</div>
     <label class="f">Trạng thái</label>
     <select onchange="setSpaStatus(${j.id},this.value)">${stages.map(s=>`<option ${s===j.status?'selected':''}>${s}</option>`).join('')}</select>
-    <label class="f">Nhân viên (${j.status})</label>
-    <select onchange="setSpaStaff(${j.id},this.value)">
-      <option value="">— chọn —</option>
-      ${state.staff.map(s=>`<option ${j.staff[j.status]===s.name?'selected':''}>${s.name}</option>`).join('')}
-    </select>
-    ${currentUser.role==='staff'?`<button class="btn ${claimed?'ghost':'primary'} sm" style="width:100%;justify-content:center;margin-top:2px;" ${claimed?'disabled':''} onclick="claimSpaJob(${j.id})">${claimed==currentUser.name?'✅ Bạn đang phụ trách':claimed?'Đã có người nhận':'🙋 Nhận việc này'}</button>`:''}
-    <div class="photorow">
+    ${isAdmin ? `<div class="divider" style="margin:8px 0;"></div><b class="small">Chỉ định nhân viên theo bước</b><div style="margin-top:6px;">${stageAssignRows}</div>`
+      : `<label class="f">Nhân viên (${j.status})</label>
+         <button class="btn ${claimed?'ghost':'primary'} sm" style="width:100%;justify-content:center;margin-top:2px;" ${(claimed&&claimed!==currentUser.name)?'disabled':''} onclick="${claimed===currentUser.name?'releaseSpaJob':'claimSpaJob'}(${j.id})">${claimed===currentUser.name?'↩️ Nhả việc':claimed?'Đã có người nhận':'🙋 Nhận việc này'}</button>`}
+    <div class="photorow" style="margin-top:8px;">
       <div class="photobox">${j.before?`<img src="${j.before}">`:'Ảnh trước'}<input type="file" accept="image/*" onchange="setSpaPhoto(${j.id},'before',this)"></div>
       <div class="photobox">${j.after?`<img src="${j.after}">`:'Ảnh sau'}<input type="file" accept="image/*" onchange="setSpaPhoto(${j.id},'after',this)"></div>
     </div>
@@ -2389,11 +2418,28 @@ window.setSpaStatus=(id,status)=>{
   saveToFirebase(); toast('✅ Cập nhật trạng thái: '+status); renderSection(currentSection);
 };
 window.setSpaStaff=(id,name)=>{const j=state.spaJobs.find(x=>x.id===id); j.staff[j.status]=name; saveToFirebase(); toast('✅ Đã gán nhân viên khâu '+j.status); renderSection(currentSection);};
+/* Admin chỉ định người nhận bước hiện tại (từ hàng đợi Phục vụ KH) */
+window.adminAssignJob=(id,name)=>{
+  const j=state.spaJobs.find(x=>x.id===id);
+  if(name==='__clear__'){ j.staff[j.status]=''; saveToFirebase(); toast('✅ Đã bỏ chỉ định khâu "'+j.status+'"'); }
+  else if(name){ j.staff[j.status]=name; saveToFirebase(); toast('✅ Đã chỉ định '+name+' vào khâu "'+j.status+'"'); }
+  renderSection(currentSection);
+};
+/* Admin chỉ định người nhận từng bước cụ thể (từ kanban Quản lý Spa) */
+window.adminAssignJobStage=(id,stage,name)=>{
+  const j=state.spaJobs.find(x=>x.id===id);
+  if(!j.staff.hasOwnProperty(stage)) j.staff[stage]='';
+  if(name==='__clear__'){ j.staff[stage]=''; saveToFirebase(); toast('✅ Đã bỏ chỉ định bước "'+stage+'"'); }
+  else if(name){ j.staff[stage]=name; saveToFirebase(); toast('✅ Đã chỉ định '+name+' vào bước "'+stage+'"'); }
+  renderSection(currentSection);
+};
 window.claimSpaJob=(id)=>{
   const j=state.spaJobs.find(x=>x.id===id);
   if(j.staff[j.status]){toast('ℹ️ Khâu này đã có người nhận: '+j.staff[j.status]);return;}
   j.staff[j.status]=currentUser.name;
-  toast('🙋 Bạn đã nhận khâu "'+j.status+'" cho '+petById(j.petId).name+' — sẽ được tính hoa hồng khi hoàn thiện');
+  const isHV=currentUser.role==='hocvien';
+  saveToFirebase();
+  toast('🙋 Bạn đã nhận khâu "'+j.status+'" cho '+petById(j.petId).name+(isHV?' — Học viên không tính hoa hồng':' — sẽ được tính hoa hồng'));
   renderSection(currentSection);
 };
 window.setSpaPhoto=(id,which,input)=>{
@@ -2699,7 +2745,8 @@ RENDER.taikhoan = () => {
     .concat(state.staff.map(s=>{
       const u=users.find(x=>x.staffId===s.id);
       const roleLabel = u ? (ROLE_LABEL[u.role]||u.role) : '—';
-      return { key:'staff', name:s.name, role:s.position+' · <span class="pill '+(u&&u.role==='cskh'?'status-tam':'silver')+'">'+roleLabel+'</span>', username:u?u.username:'', password:u?u.password:'', staffId:s.id };
+      const rolePillClass = u ? (u.role==='cskh'?'status-tam':u.role==='hocvien'?'platinum':'silver') : 'silver';
+      return { key:'staff', name:s.name, role:s.position+' · <span class="pill '+rolePillClass+'">'+roleLabel+'</span>', username:u?u.username:'', password:u?u.password:'', staffId:s.id };
     }));
   return `
   <div class="toolbar">
@@ -2742,8 +2789,9 @@ window.editStaffAccount=(staffId)=>{
   <h3>🔑 Đổi tài khoản — ${s.name}</h3>
   <label class="f">Vai trò</label>
   <select id="us_role" style="width:100%">
-    <option value="staff" ${u.role==='staff'?'selected':''}>Nhân viên</option>
-    <option value="cskh"  ${u.role==='cskh' ?'selected':''}>Chăm sóc khách hàng (CSKH)</option>
+    <option value="staff"    ${u.role==='staff'   ?'selected':''}>Nhân viên</option>
+    <option value="cskh"     ${u.role==='cskh'    ?'selected':''}>Chăm sóc khách hàng (CSKH)</option>
+    <option value="hocvien"  ${u.role==='hocvien' ?'selected':''}>Học viên</option>
   </select>
   <label class="f" style="margin-top:10px;">Tên đăng nhập</label><input type="text" id="us_user" style="width:100%" value="${u.username}">
   <label class="f" style="margin-top:10px;">Mật khẩu</label><input type="text" id="us_pass" style="width:100%" value="${u.password}">
@@ -2769,6 +2817,7 @@ window.createStaffAccount=(staffId)=>{
   <select id="nc_role" style="width:100%">
     <option value="staff">Nhân viên</option>
     <option value="cskh">Chăm sóc khách hàng (CSKH)</option>
+    <option value="hocvien">Học viên</option>
   </select>
   <label class="f" style="margin-top:10px;">Tên đăng nhập</label><input type="text" id="nc_user" style="width:100%">
   <label class="f" style="margin-top:10px;">Mật khẩu</label><input type="text" id="nc_pass" style="width:100%" value="123456">
@@ -2837,7 +2886,7 @@ function renderSection(id){
       if (d.expenses)   state.expenses   = d.expenses;
       if (d.warehouse)  state.warehouse  = d.warehouse;
       if (d.retail)     state.retail     = d.retail;
-      if (typeof currentSection !== 'undefined' && currentSection && typeof renderSection === 'function') {
+      if (typeof currentSection !== 'undefined' && currentSection && typeof renderSection === 'function' && currentUser) {
         renderSection(currentSection);
       }
     }, e => console.error('Firebase sync error:', e));
