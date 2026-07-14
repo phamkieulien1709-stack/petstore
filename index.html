@@ -582,7 +582,8 @@ const RENDER={};
 /* ---- PHỤC VỤ KHÁCH HÀNG (hàng đợi lên đầu + modal thêm đơn mới) ---- */
 let wizPhoto='';
 RENDER.phucvukh = () => {
-  const active = state.spaJobs.filter(j=>j.status!=='Hoàn thiện');
+  // Ca "chưa xong" = chưa có completedDate. Guard j.staff phòng dữ liệu cũ từ Firebase
+  const active = state.spaJobs.filter(j=>!j.completedDate).map(j=>({...j,staff:j.staff||{}}));
   const waiting = active.filter(j=>!j.staff[j.status]);
   const mine    = active.filter(j=>!waiting.includes(j) && j.staff[j.status]===currentUser.name);
   const others  = active.filter(j=>!waiting.includes(j) && !mine.includes(j));
@@ -599,7 +600,10 @@ RENDER.phucvukh = () => {
 };
 
 function queueCard(j){
-  const p=petById(j.petId), o=ownerById(p.ownerId), claimed=j.staff[j.status];
+  const p=petById(j.petId);
+  if(!p) return ''; // bỏ qua ca có petId không hợp lệ (dữ liệu cũ/lỗi)
+  const o=ownerById(p.ownerId)||{name:'(Không rõ)'};
+  const claimed=(j.staff||{})[j.status];
   const isMine = claimed===currentUser.name;
   const isWaitingOpen = !claimed;
   const isAdmin = currentUser.role==='admin';
@@ -611,7 +615,7 @@ function queueCard(j){
         <div class="small muted">${j.service}${j.date?' · '+j.date:''}</div>
       </div>
       <div class="flex gap8 center">
-        <span class="pill status-tam">${j.status}</span>
+        <span class="pill ${j.status==='Chờ'?'status-cho':j.status==='Hoàn thiện'?'status-xong':j.status==='Cắt'?'status-cat':'status-tam'}">${j.status}</span>
         ${isAdmin
           ? `<select style="min-width:130px;font-size:12px;" onchange="adminAssignJob(${j.id},this.value)">
                <option value="">— Chỉ định người nhận —</option>
@@ -935,11 +939,12 @@ window.submitService=()=>{
   svc.used++;
 
   // Ca Spa mới — khâu lấy từ commissionSteps của dịch vụ
+  // Tất cả khâu để trống để NV tự "Nhận việc" — đúng luồng hàng đợi (không tự gán người tiếp nhận)
   const jobId=Math.max(0,...state.spaJobs.map(j=>j.id))+1;
   const firstStage=(svc.commissionSteps&&svc.commissionSteps[0])?svc.commissionSteps[0].stage:'Chờ';
-  const staffMap={}; (svc.commissionSteps||[{stage:'Chờ'}]).forEach((st,i)=>{ staffMap[st.stage]=i===0?currentUser.name:''; });
+  const staffMap={}; (svc.commissionSteps||[{stage:'Chờ'}]).forEach(st=>{ staffMap[st.stage]=''; });
   state.spaJobs.push({id:jobId,petId,service:svc.name,status:firstStage,price:finalPrice,
-    staff:staffMap,before:wizPhoto,after:'',date:TODAY,orderId,completedDate:null});
+    staff:staffMap,before:wizPhoto,after:'',date:TODAY,orderId,completedDate:null,branch});
 
   closeModal();
   saveToFirebase(); toast('✅ Đã tiếp nhận '+petById(petId).name+' — dịch vụ "'+svc.name+'" đang ở hàng đợi');
@@ -1170,7 +1175,8 @@ window.openAddOrderWizard=()=>{
   openModal(buildWizardHtml());
   switchWizTab('dichvu');
   onSvcComboGroupChange();
-  populateSvcPetSelect();
+  // Không gọi populateSvcPetSelect() ở đây vì chưa có khách hàng được chọn
+  // — sẽ được gọi khi chọn khách hàng qua selectSvcCust() hoặc toggleSvcCustMode()
   renderGoodsCart();
 };
 
@@ -2379,8 +2385,10 @@ RENDER.spa = () => {
   </div>`;
 };
 function spaCard(j){
-  const p=petById(j.petId), o=ownerById(p.ownerId);
-  const claimed = j.staff[j.status];
+  const p=petById(j.petId);
+  if(!p) return ''; // bỏ qua ca lỗi dữ liệu
+  const o=ownerById(p.ownerId)||{name:'(Không rõ)'};
+  const claimed = (j.staff||{})[j.status];
   const stages=jobStages(j);
   const isAdmin=currentUser.role==='admin';
   const assignableUsers=state.staff.filter(s=>{ const u=users.find(x=>x.staffId===s.id); return u&&['staff','hocvien','cskh'].includes(u.role); });
@@ -2836,7 +2844,12 @@ window.saveNewStaffAccount=(staffId)=>{
 
 /* ============================= ROUTER ============================= */
 function renderSection(id){
-  document.getElementById('content').innerHTML = RENDER[id] ? RENDER[id]() : `<div class="card">Đang phát triển...</div>`;
+  try {
+    document.getElementById('content').innerHTML = RENDER[id] ? RENDER[id]() : `<div class="card">Đang phát triển...</div>`;
+  } catch(e) {
+    console.error('renderSection error ['+id+']:', e);
+    document.getElementById('content').innerHTML = `<div class="card"><b>⚠️ Lỗi hiển thị mục "${id}"</b><br><span class="muted small">${e.message}</span></div>`;
+  }
 }
 </script>
 
