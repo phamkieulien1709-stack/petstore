@@ -928,30 +928,34 @@ window.svcPhotoChange=(input)=>{
     toast('🖼️ Đã tải ảnh trước');
   });
 };
+let _submittingService=false;
 window.submitService=()=>{
+  if(_submittingService){toast('⏳ Đang xử lý, vui lòng chờ...');return;}
+  _submittingService=true;
   const custMode=document.querySelector('input[name="svcCustMode"]:checked').value;
   let custId,custName;
+  const _fail=(msg)=>{toast(msg);_submittingService=false;};
   if(custMode==='new'){
     custName=document.getElementById('svc_cust_name').value.trim();
-    if(!custName){toast('⚠️ Vui lòng nhập tên khách hàng mới');return;}
+    if(!custName){_fail('⚠️ Vui lòng nhập tên khách hàng mới');return;}
     custId=Math.max(0,...state.customers.map(c=>c.id))+1;
     state.customers.push({id:custId,name:custName,phone:document.getElementById('svc_cust_phone').value,address:'',email:'',tier:'Silver',points:0,bookings:[],history:[]});
   } else {
     custId=+document.getElementById('svc_cust_select').value;
-    if(!custId){toast('⚠️ Vui lòng tìm và chọn khách hàng');return;}
+    if(!custId){_fail('⚠️ Vui lòng tìm và chọn khách hàng');return;}
     custName=ownerById(custId).name;
   }
   let petId,petSelVal=document.getElementById('svc_pet_select')?document.getElementById('svc_pet_select').value:'__new__';
   if(custMode==='new'||petSelVal==='__new__'){
     const petName=document.getElementById('svc_pet_name').value.trim();
-    if(!petName){toast('⚠️ Vui lòng nhập tên thú cưng');return;}
+    if(!petName){_fail('⚠️ Vui lòng nhập tên thú cưng');return;}
     petId=Math.max(0,...state.pets.map(p=>p.id))+1;
     state.pets.push({id:petId,ownerId:custId,name:petName,breed:document.getElementById('svc_pet_breed').value,note:''});
   } else {
     petId=+petSelVal;
   }
-  if(!svcCart.length){toast('⚠️ Giỏ dịch vụ đang trống — thêm ít nhất 1 dịch vụ');return;}
-  if(!wizPhoto){if(!confirm('Chưa có ảnh trước. Vẫn tiếp tục?'))return;}
+  if(!svcCart.length){_fail('⚠️ Giỏ dịch vụ đang trống — thêm ít nhất 1 dịch vụ');return;}
+  if(!wizPhoto){if(!confirm('Chưa có ảnh trước. Vẫn tiếp tục?')){_submittingService=false;return;}}
   const branch=document.getElementById('svc_branch').value;
   const pet=petById(petId);
   svcCart.forEach((it,idx)=>{
@@ -970,8 +974,10 @@ window.submitService=()=>{
   });
   const count=svcCart.length;
   svcCart=[];
+  wizPhoto='';
   closeModal();
   saveToFirebase();
+  _submittingService=false;
   toast('✅ Đã tiếp nhận '+(pet?pet.name:'thú cưng')+' — '+count+' dịch vụ đang ở hàng đợi');
   renderSection('phucvukh');
 };
@@ -2942,6 +2948,7 @@ function renderSection(id){
     DB_DOC.set({
       branches:   state.branches,
       staff:      state.staff,
+      services:   state.services,
       orders:     state.orders,
       customers:  state.customers,
       pets:       state.pets,
@@ -2959,6 +2966,7 @@ function renderSection(id){
       const d = snap.data();
       if (d.branches)   state.branches   = d.branches;
       if (d.staff)      state.staff      = d.staff;
+      if (d.services)   state.services   = d.services;
       if (d.orders)     state.orders     = d.orders;
       if (d.customers)  state.customers  = d.customers;
       if (d.pets)       state.pets       = d.pets;
@@ -2967,7 +2975,9 @@ function renderSection(id){
       if (d.expenses)   state.expenses   = d.expenses;
       if (d.warehouse)  state.warehouse  = d.warehouse;
       if (d.retail)     state.retail     = d.retail;
-      if (typeof currentSection !== 'undefined' && currentSection && typeof renderSection === 'function' && currentUser) {
+      // Không re-render khi modal đang mở (tránh nhận đơn đôi)
+      const modalOpen = document.getElementById('modalBg') && document.getElementById('modalBg').classList.contains('show');
+      if (!modalOpen && typeof currentSection !== 'undefined' && currentSection && typeof renderSection === 'function' && currentUser) {
         renderSection(currentSection);
       }
     }, e => console.error('Firebase sync error:', e));
