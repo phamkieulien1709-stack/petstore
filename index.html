@@ -721,14 +721,22 @@ window.switchWizTab=(tab)=>{
 
 /* ============ TAB 1: THÊM MỚI DỊCH VỤ ============ */
 let svcCart=[];
+let svcQuickSelectedId=null; // ID dịch vụ đang chọn qua ô tìm nhanh (ưu tiên hơn combo dropdown)
 function svcCartTotal(){return svcCart.reduce((s,it)=>s+it.finalPrice,0);}
 window.addToSvcCart=()=>{
-  const svc=svcSelectedService();
-  if(!svc){toast('⚠️ Vui lòng chọn combo dịch vụ hợp lệ');return;}
+  // Ưu tiên dịch vụ đang chọn qua ô tìm nhanh (bao gồm dịch vụ khác không có combo)
+  const svc = svcQuickSelectedId
+    ? state.services.find(s=>s.id===svcQuickSelectedId)
+    : svcSelectedService();
+  if(!svc){toast('⚠️ Vui lòng chọn dịch vụ hợp lệ (tìm nhanh hoặc chọn combo bên dưới)');return;}
   const discAmount=Math.min(svc.price,+document.getElementById('svc_disc_amount').value||0);
   const discPercent=+document.getElementById('svc_disc_percent').value||0;
   const finalPrice=Math.max(0,svc.price-discAmount);
   svcCart.push({svcId:svc.id,name:svc.name,price:svc.price,discPercent,discAmount,finalPrice});
+  // Reset sau khi thêm
+  svcQuickSelectedId=null;
+  const qs=document.getElementById('svc_quick_search'); if(qs) qs.value='';
+  const hint=document.getElementById('svc_quick_hint'); if(hint) hint.textContent='Gõ để lọc, hoặc chọn thủ công bên dưới.';
   document.getElementById('svc_disc_percent').value=0;
   document.getElementById('svc_disc_amount').value=0;
   updateSvcPricePreview();
@@ -840,16 +848,25 @@ window.onSvcQuickSearch=(val)=>{
   }
   if(svc.comboGroup){
     // Dịch vụ combo: điều chỉnh các dropdown
+    svcQuickSelectedId=null; // dùng combo dropdown
     document.getElementById('svc_combo_group').value=svc.comboGroup;
     onSvcComboGroupChange();
     document.getElementById('svc_pet_type').value=svc.petType;
     onSvcPetTypeChange();
     document.getElementById('svc_tier').value=svc.tier;
     onSvcTierChange();
+  } else {
+    // Dịch vụ khác (không có combo): lưu id để addToSvcCart dùng
+    svcQuickSelectedId=svc.id;
+    // Cập nhật preview giá và chiết khấu
+    const pct=+document.getElementById('svc_disc_percent').value||0;
+    document.getElementById('svc_disc_amount').value=Math.round(svc.price*pct/100);
+    document.getElementById('svc_price_preview').innerHTML=`Dịch vụ: <b>${svc.name}</b><br>Giá: <b>${vnd(svc.price)}</b>`;
   }
-  hint.innerHTML=`✅ Đã chọn: <b>${svc.name}</b> — ${vnd(svc.price)}`;
+  hint.innerHTML=`✅ Đã chọn: <b>${svc.name}</b> — ${vnd(svc.price)} · Bấm "+ Thêm vào giỏ" để thêm`;
 };
 window.onSvcComboGroupChange=()=>{
+  svcQuickSelectedId=null; // bỏ chọn dịch vụ khác nếu đang chọn combo
   const group=document.getElementById('svc_combo_group').value;
   const petTypeSel=document.getElementById('svc_pet_type');
   const types=comboPetTypes(group);
@@ -873,27 +890,32 @@ window.onSvcTierChange=()=>{
   updateSvcPricePreview();
 };
 window.svcDiscPercentChange=(el)=>{
-  const svc=svcSelectedService(); const price=svc?svc.price:0;
+  const svc=svcQuickSelectedId?state.services.find(s=>s.id===svcQuickSelectedId):svcSelectedService(); const price=svc?svc.price:0;
   const pct=Math.min(100,Math.max(0,+el.value||0));
   const amt=Math.round(price*pct/100);
   document.getElementById('svc_disc_amount').value=amt;
   updateSvcPricePreview();
 };
 window.svcDiscAmountChange=(el)=>{
-  const svc=svcSelectedService(); const price=svc?svc.price:0;
+  const svc=svcQuickSelectedId?state.services.find(s=>s.id===svcQuickSelectedId):svcSelectedService(); const price=svc?svc.price:0;
   const amt=Math.max(0,+el.value||0);
   const pct = price? +(Math.min(amt,price)/price*100).toFixed(1) : 0;
   document.getElementById('svc_disc_percent').value=pct;
   updateSvcPricePreview();
 };
 function updateSvcPricePreview(){
-  const svc=svcSelectedService();
+  // Ưu tiên dịch vụ khác đang chọn qua tìm nhanh
+  const svc = svcQuickSelectedId
+    ? state.services.find(s=>s.id===svcQuickSelectedId)
+    : svcSelectedService();
   const price=svc?svc.price:0;
   const amt=+document.getElementById('svc_disc_amount').value||0;
   const final=Math.max(0,price-amt);
   document.getElementById('svc_price_preview').innerHTML = svc
-    ? `Combo: <b>${svc.petType} · ${svc.tier}</b><br>Giá: <b>${vnd(price)}</b> → Sau chiết khấu: <b>${vnd(final)}</b>`
-    : 'Chưa có combo phù hợp.';
+    ? (svc.comboGroup
+        ? `Combo: <b>${svc.petType} · ${svc.tier}</b><br>Giá: <b>${vnd(price)}</b> → Sau chiết khấu: <b>${vnd(final)}</b>`
+        : `Dịch vụ: <b>${svc.name}</b><br>Giá: <b>${vnd(price)}</b> → Sau chiết khấu: <b>${vnd(final)}</b>`)
+    : 'Chưa có dịch vụ nào được chọn.';
 }
 window.toggleSvcCustMode=(mode)=>{
   document.getElementById('svcCustExistingWrap').classList.toggle('hidden',mode==='new');
@@ -1242,6 +1264,7 @@ window.openAddOrderWizard=()=>{
   wizPhoto='';
   gdCart=[];
   svcCart=[];
+  svcQuickSelectedId=null;
   openModal(buildWizardHtml());
   switchWizTab('dichvu');
   onSvcComboGroupChange();
