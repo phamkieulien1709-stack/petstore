@@ -539,6 +539,8 @@ function stepRateForStaff(svc, stage, staffId){
 
 /* Tổng HH 1 spaJob cho 1 nhân viên cụ thể (cộng tất cả bước NV đó đã claim) */
 function jobCommissionForStaff(j, staffName){
+  // Ca bị huỷ (do đơn hàng bị huỷ) → không tính hoa hồng
+  if(j.cancelled) return 0;
   const svc=serviceByRefName(j.service);
   const st=staffByName(staffName);
   if(!svc||!st) return 0;
@@ -582,8 +584,8 @@ const RENDER={};
 /* ---- PHỤC VỤ KHÁCH HÀNG (hàng đợi lên đầu + modal thêm đơn mới) ---- */
 let wizPhoto='';
 RENDER.phucvukh = () => {
-  // Ca "chưa xong" = chưa có completedDate. Guard j.staff phòng dữ liệu cũ từ Firebase
-  const active = state.spaJobs.filter(j=>!j.completedDate).map(j=>({...j,staff:j.staff||{}}));
+  // Ca "chưa xong" = chưa có completedDate và chưa bị huỷ. Guard j.staff phòng dữ liệu cũ từ Firebase
+  const active = state.spaJobs.filter(j=>!j.completedDate && !j.cancelled).map(j=>({...j,staff:j.staff||{}}));
   const waiting = active.filter(j=>!j.staff[j.status]);
   const mine    = active.filter(j=>!waiting.includes(j) && j.staff[j.status]===currentUser.name);
   const others  = active.filter(j=>!waiting.includes(j) && !mine.includes(j));
@@ -642,10 +644,8 @@ function queueCard(j){
     <div class="divider"></div>
     <div class="formgrid">
       <div class="field">
-        <label class="f">Cập nhật trạng thái</label>
-        <select style="width:100%" onchange="advanceMyJob(${j.id},this.value)">
-          ${jobStages(j).map(s=>`<option ${s===j.status?'selected':''}>${s}</option>`).join('')}
-        </select>
+        <label class="f">Bước hiện tại: <b>${j.status}</b></label>
+        ${(()=>{const stages=jobStages(j);const isLast=stages.indexOf(j.status)===stages.length-1;const nextStage=stages[stages.indexOf(j.status)+1];return `<button class="btn primary" style="width:100%;margin-top:4px;" onclick="completeCurrentStep(${j.id})">${isLast?'🎉 Hoàn thành ca':'✅ Xong bước "'+j.status+'" → Sang "'+nextStage+'"'}</button>`;})()}
       </div>
       <div class="field">
         <label class="f">Ảnh trước / sau</label>
@@ -657,14 +657,39 @@ function queueCard(j){
     </div>` : ''}
   </div>`;
 }
+window.completeCurrentStep=(id)=>{
+  const j=state.spaJobs.find(x=>x.id===id);
+  if(!j) return;
+  const stages=jobStages(j);
+  const currentIdx=stages.indexOf(j.status);
+  if(currentIdx===-1) return;
+  const isLast = currentIdx === stages.length-1;
+  if(isLast){
+    // Bước cuối cùng → hoàn thành toàn bộ ca
+    j.completedDate = j.completedDate || TODAY;
+    if(j.orderId){
+      const o=state.orders.find(x=>x.id===j.orderId);
+      if(o && o.status!=='Đã huỷ') o.status='Hoàn thành';
+    }
+    saveToFirebase();
+    toast('🎉 Đã hoàn thành bước "'+j.status+'" — ca dịch vụ hoàn tất!');
+  } else {
+    // Tự động nhảy sang bước tiếp theo, xóa người phụ trách để NV khác có thể nhận
+    const nextStage = stages[currentIdx+1];
+    j.status = nextStage;
+    j.completedDate = null;
+    saveToFirebase();
+    toast('✅ Bước "'+stages[currentIdx]+'" xong — chuyển sang bước "'+nextStage+'" · Chờ nhân viên nhận');
+  }
+  renderSection(currentSection);
+};
+// Giữ lại advanceMyJob để không phá vỡ nếu có nơi nào khác gọi
 window.advanceMyJob=(id,status)=>{
   const j=state.spaJobs.find(x=>x.id===id);
   j.status=status;
-  // Không tự gán người đang cập nhật vào khâu mới — mỗi khâu (Tắm/Cắt/Hoàn thiện...) cần được nhận riêng,
-  // để đúng thực tế: khâu Tắm có thể là NV A, khâu Cắt lại là NV B.
   const stages=jobStages(j); const lastStage=stages[stages.length-1];
-  if(status===lastStage){ j.completedDate=j.completedDate||TODAY; if(j.orderId){const o=state.orders.find(x=>x.id===j.orderId); if(o)o.status='Hoàn thành';} saveToFirebase(); toast('🎉 Đã chuyển sang bước "'+status+'" — nếu chưa có người nhận, ca sẽ hiện lại ở hàng đợi'); }
-  else { j.completedDate=null; saveToFirebase(); toast('✅ Đã chuyển sang khâu "'+status+'" — khâu này đang chờ nhân viên nhận'); }
+  if(status===lastStage){ j.completedDate=j.completedDate||TODAY; if(j.orderId){const o=state.orders.find(x=>x.id===j.orderId); if(o && o.status!=='Đã huỷ')o.status='Hoàn thành';} saveToFirebase(); toast('🎉 Ca hoàn thành'); }
+  else { j.completedDate=null; saveToFirebase(); toast('✅ Đã chuyển sang khâu "'+status+'"'); }
   renderSection(currentSection);
 };
 window.releaseSpaJob=(id)=>{
@@ -759,7 +784,7 @@ function buildServiceTabHtml(){
   <div class="divider"></div>
   <b>Thêm dịch vụ vào giỏ</b>
   <label class="f" style="margin-top:10px;">🔎 Tìm nhanh dịch vụ</label>
-  <input type="text" id="svc_quick_search" list="svc_datalist" placeholder="VD: Tắm thường, Cạo, Chó, 3 - 5 KG..." style="width:100%" oninput="onSvcQuickSearch(this.value)">
+  <input type="text" id="svc_quick_search" list="svc_datalist" placeholder="VD: Tắm thường, Cạo, Chó, 3 - 5 KG..." style="width:100%" oninput="onSvcQuickSearch(this.value)" onfocus="refreshSvcDatalist()">
   <datalist id="svc_datalist">${state.services.filter(s=>s.comboGroup&&s.comboGroup!=='khach_san').map(s=>`<option value="${s.name}">`).join('')}</datalist>
   <div class="small muted" id="svc_quick_hint" style="margin-top:4px;">Gõ để lọc, hoặc chọn thủ công bên dưới.</div>
   <label class="f" style="margin-top:10px;">Loại combo</label>
@@ -796,19 +821,32 @@ function svcSelectedService(){
   if(!groupEl||!petTypeEl||!tierEl) return null;
   return state.services.find(s=>s.comboGroup===groupEl.value && s.petType===petTypeEl.value && s.tier===tierEl.value);
 }
+// Cập nhật datalist dịch vụ tìm nhanh theo state hiện tại (bao gồm dịch vụ mới từ Firebase)
+window.refreshSvcDatalist=()=>{
+  const dl=document.getElementById('svc_datalist');
+  if(!dl) return;
+  // Bao gồm cả dịch vụ combo và dịch vụ tự do (không có comboGroup) nhưng bỏ khách sạn
+  const svcs=state.services.filter(s=>s.comboGroup!=='khach_san');
+  dl.innerHTML=svcs.map(s=>`<option value="${s.name}">`).join('');
+};
 window.onSvcQuickSearch=(val)=>{
-  const svc=state.services.find(s=>s.comboGroup && s.comboGroup!=='khach_san' && s.name===val);
+  refreshSvcDatalist(); // đảm bảo list luôn mới nhất khi gõ
+  // Tìm trong tất cả dịch vụ không phải khách sạn (bao gồm dịch vụ tự do)
+  const svc=state.services.find(s=>s.comboGroup!=='khach_san' && s.name===val);
   const hint=document.getElementById('svc_quick_hint');
   if(!svc){
     hint.textContent = val ? '⚠️ Chưa khớp dịch vụ nào — gõ tiếp hoặc chọn thủ công bên dưới.' : 'Gõ để lọc trong danh sách gợi ý, hoặc chọn thủ công theo Loại combo / Loại thú / Mốc cân nặng bên dưới.';
     return;
   }
-  document.getElementById('svc_combo_group').value=svc.comboGroup;
-  onSvcComboGroupChange();
-  document.getElementById('svc_pet_type').value=svc.petType;
-  onSvcPetTypeChange();
-  document.getElementById('svc_tier').value=svc.tier;
-  onSvcTierChange();
+  if(svc.comboGroup){
+    // Dịch vụ combo: điều chỉnh các dropdown
+    document.getElementById('svc_combo_group').value=svc.comboGroup;
+    onSvcComboGroupChange();
+    document.getElementById('svc_pet_type').value=svc.petType;
+    onSvcPetTypeChange();
+    document.getElementById('svc_tier').value=svc.tier;
+    onSvcTierChange();
+  }
   hint.innerHTML=`✅ Đã chọn: <b>${svc.name}</b> — ${vnd(svc.price)}`;
 };
 window.onSvcComboGroupChange=()=>{
@@ -1591,7 +1629,7 @@ window.saveStaff=()=>{
   if(username){
     users.push({username,password:document.getElementById('s_pass').value||'123456',role:'staff',name,staffId:id});
   }
-  saveToFirebase(); closeModal(); toast('✅ Đã thêm nhân viên '+name+(username?' — tài khoản @'+username:'')); renderSection('nhanvien');
+  saveToFirebase(); // bao gồm cả staffAccounts closeModal(); toast('✅ Đã thêm nhân viên '+name+(username?' — tài khoản @'+username:'')); renderSection('nhanvien');
 };
 window.editStaff=(id)=>{
   const s=state.staff.find(x=>x.id===id);
@@ -1647,7 +1685,7 @@ window.openAddOrder=()=>{
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button>
   <h3>+ Thêm đơn hàng</h3>
   <div class="formgrid">
-    <div class="field full"><label class="f">Dịch vụ (gõ để tìm)</label><input type="text" id="o_service" list="o_service_list" style="width:100%" value="${state.services[0].name}" oninput="onOServiceInput(this.value)">
+    <div class="field full"><label class="f">Dịch vụ (gõ để tìm)</label><input type="text" id="o_service" list="o_service_list" style="width:100%" value="${state.services[0]?state.services[0].name:''}" oninput="onOServiceInput(this.value)">
       <datalist id="o_service_list">${state.services.map(s=>`<option value="${s.name}">`).join('')}</datalist>
     </div>
     <div class="field"><label class="f">Giá</label><input type="number" id="o_price" style="width:100%" value="${state.services[0].price}"></div>
@@ -1688,6 +1726,7 @@ window.editOrder=(id)=>{
 };
 window.saveEditOrder=(id)=>{
   const o=state.orders.find(x=>x.id===id);
+  const prevStatus=o.status;
   o.service=document.getElementById('eo_service').value;
   o.price=+document.getElementById('eo_price').value||0;
   o.branch=document.getElementById('eo_branch').value;
@@ -1695,7 +1734,23 @@ window.saveEditOrder=(id)=>{
   o.staff=document.getElementById('eo_staff').value;
   o.date=document.getElementById('eo_date').value;
   o.status=document.getElementById('eo_status').value;
-  saveToFirebase(); closeModal(); toast('✅ Đã cập nhật đơn hàng'); renderSection('donhang');
+  // Khi huỷ đơn: đánh dấu các spaJob liên quan là đã huỷ (cancelled=true)
+  // để hàm tính hoa hồng bỏ qua — nhân viên không còn nhận HH cho ca này
+  if(o.status==='Đã huỷ' && prevStatus!=='Đã huỷ'){
+    state.spaJobs.forEach(j=>{
+      if(j.orderId===id){
+        j.cancelled=true;
+        j.completedDate=null; // đưa ra khỏi danh sách hoàn thành
+      }
+    });
+  }
+  // Nếu khôi phục đơn từ trạng thái huỷ
+  if(o.status!=='Đã huỷ' && prevStatus==='Đã huỷ'){
+    state.spaJobs.forEach(j=>{
+      if(j.orderId===id) j.cancelled=false;
+    });
+  }
+  saveToFirebase(); closeModal(); toast('✅ Đã cập nhật đơn hàng'+(o.status==='Đã huỷ'?' — hoa hồng liên quan đã bị thu hồi':'')); renderSection('donhang');
 };
 window.deleteOrder=(id)=>{
   if(!confirm('Xóa đơn hàng này?')) return;
@@ -2887,7 +2942,7 @@ window.saveStaffAccount=(staffId)=>{
   u.role=document.getElementById('us_role').value||u.role;
   const pass=document.getElementById('us_pass').value;
   if(pass) u.password=pass;
-  closeModal(); toast('✅ Đã cập nhật tài khoản của '+s.name); renderSection('taikhoan');
+  saveToFirebase(); closeModal(); toast('✅ Đã cập nhật tài khoản của '+s.name); renderSection('taikhoan');
 };
 window.createStaffAccount=(staffId)=>{
   const s=state.staff.find(x=>x.id===staffId);
@@ -2911,7 +2966,7 @@ window.saveNewStaffAccount=(staffId)=>{
   const role=document.getElementById('nc_role').value||'staff';
   users.push({username,password:document.getElementById('nc_pass').value||'123456',role,name:s.name,staffId});
   s.username=username;
-  closeModal(); toast('✅ Đã tạo tài khoản cho '+s.name); renderSection('taikhoan');
+  saveToFirebase(); closeModal(); toast('✅ Đã tạo tài khoản cho '+s.name); renderSection('taikhoan');
 };
 
 /* ============================= ROUTER ============================= */
@@ -2945,18 +3000,21 @@ function renderSection(id){
   const DB_DOC = db.collection('cpet').doc('state');
 
   window.saveToFirebase = () => {
+    // Lưu tất cả tài khoản nhân viên (không lưu admin để bảo mật)
+    const staffAccounts = users.filter(u => u.staffId != null);
     DB_DOC.set({
-      branches:   state.branches,
-      staff:      state.staff,
-      services:   state.services,
-      orders:     state.orders,
-      customers:  state.customers,
-      pets:       state.pets,
-      spaJobs:    state.spaJobs,
-      hotelStays: state.hotelStays,
-      expenses:   state.expenses,
-      warehouse:  state.warehouse,
-      retail:     state.retail,
+      branches:      state.branches,
+      staff:         state.staff,
+      services:      state.services,
+      orders:        state.orders,
+      customers:     state.customers,
+      pets:          state.pets,
+      spaJobs:       state.spaJobs,
+      hotelStays:    state.hotelStays,
+      expenses:      state.expenses,
+      warehouse:     state.warehouse,
+      retail:        state.retail,
+      staffAccounts: staffAccounts,
     }).catch(e => console.error('Firebase save error:', e));
   };
 
@@ -2975,6 +3033,24 @@ function renderSection(id){
       if (d.expenses)   state.expenses   = d.expenses;
       if (d.warehouse)  state.warehouse  = d.warehouse;
       if (d.retail)     state.retail     = d.retail;
+      // Khôi phục tài khoản nhân viên vào mảng users (giữ lại tài khoản admin)
+      if (d.staffAccounts && Array.isArray(d.staffAccounts)) {
+        // Xóa tất cả user không phải admin trước
+        for (let i = users.length - 1; i >= 0; i--) {
+          if (users[i].staffId != null) users.splice(i, 1);
+        }
+        // Thêm lại từ Firebase
+        d.staffAccounts.forEach(acc => {
+          if (!users.some(u => u.username === acc.username)) {
+            users.push(acc);
+          }
+        });
+        // Đồng bộ username từ staffAccounts vào state.staff (phòng trường hợp lệch)
+        d.staffAccounts.forEach(acc => {
+          const s = state.staff.find(x => x.id === acc.staffId);
+          if (s) s.username = acc.username;
+        });
+      }
       // Không re-render khi modal đang mở (tránh nhận đơn đôi)
       const modalOpen = document.getElementById('modalBg') && document.getElementById('modalBg').classList.contains('show');
       if (!modalOpen && typeof currentSection !== 'undefined' && currentSection && typeof renderSection === 'function' && currentUser) {
