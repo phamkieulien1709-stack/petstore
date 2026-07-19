@@ -1614,7 +1614,12 @@ function staffRow(s,from,to){
   const myOrders=state.orders.filter(o=>o.staff===s.name && o.status!=='Đã huỷ' && o.date>=from && o.date<=to);
   const svcRevenue=myOrders.filter(o=>o.type==='dichvu').reduce((sum,o)=>sum+o.price,0);
   const goodsRevenue=myOrders.filter(o=>o.type==='hangban').reduce((sum,o)=>sum+o.price,0);
-  const commission=myOrders.reduce((sum,o)=>sum+orderCommission(o),0);
+  // Hoa hồng hàng bán
+  const goodsCommission=myOrders.filter(o=>o.type==='hangban').reduce((sum,o)=>sum+orderCommission(o),0);
+  // Hoa hồng dịch vụ spa: tổng từ các spaJob trong khoảng thời gian, không bị huỷ
+  const spaCommission=state.spaJobs.filter(j=>!j.cancelled && j.date>=from && j.date<=to)
+    .reduce((sum,j)=>sum+jobCommissionForStaff(j,s.name),0);
+  const commission=goodsCommission+spaCommission;
   return `<tr>
     <td><b>${s.name}</b><div class="muted small">${s.phone}</div></td>
     <td>${s.username?`<span class="pill ok">@${s.username}</span>`:`<span class="pill">Chưa có</span>`}</td>
@@ -1711,7 +1716,7 @@ window.openAddOrder=()=>{
     <div class="field full"><label class="f">Dịch vụ (gõ để tìm)</label><input type="text" id="o_service" list="o_service_list" style="width:100%" value="${state.services[0]?state.services[0].name:''}" oninput="onOServiceInput(this.value)">
       <datalist id="o_service_list">${state.services.map(s=>`<option value="${s.name}">`).join('')}</datalist>
     </div>
-    <div class="field"><label class="f">Giá</label><input type="number" id="o_price" style="width:100%" value="${state.services[0].price}"></div>
+    <div class="field"><label class="f">Giá</label><input type="number" id="o_price" style="width:100%" value="${state.services[0]?state.services[0].price:0}"></div>
     <div class="field"><label class="f">Cơ sở áp dụng</label><select id="o_branch" style="width:100%">${branchNames().map(b=>`<option>${b}</option>`).join('')}</select></div>
     <div class="field"><label class="f">Khách hàng</label><select id="o_cust" style="width:100%">${state.customers.map(c=>`<option>${c.name}</option>`).join('')}</select></div>
     <div class="field"><label class="f">Nhân viên phụ trách</label><select id="o_staff" style="width:100%">${state.staff.map(s=>`<option>${s.name}</option>`).join('')}</select></div>
@@ -1776,9 +1781,11 @@ window.saveEditOrder=(id)=>{
   saveToFirebase(); closeModal(); toast('✅ Đã cập nhật đơn hàng'+(o.status==='Đã huỷ'?' — hoa hồng liên quan đã bị thu hồi':'')); renderSection('donhang');
 };
 window.deleteOrder=(id)=>{
-  if(!confirm('Xóa đơn hàng này?')) return;
+  if(!confirm('Xóa đơn hàng này? Các ca dịch vụ liên quan cũng sẽ bị xóa khỏi hàng đợi.')) return;
+  // Xóa spaJob liên quan (để không còn hiện ở Phục vụ KH và Quản lý spa)
+  state.spaJobs=state.spaJobs.filter(j=>j.orderId!==id);
   state.orders=state.orders.filter(o=>o.id!==id);
-  saveToFirebase(); toast('🗑️ Đã xóa đơn hàng'); renderSection('donhang');
+  saveToFirebase(); toast('🗑️ Đã xóa đơn hàng và ca dịch vụ liên quan'); renderSection('donhang');
 };
 window.filterTable=(tableId,q)=>{
   q=q.toLowerCase();
