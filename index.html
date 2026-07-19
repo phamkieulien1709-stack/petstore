@@ -514,7 +514,12 @@ function toast(msg){
   clearTimeout(window.__tt); window.__tt=setTimeout(()=>t.classList.remove('show'),2400);
 }
 function openModal(html){document.getElementById('modalBody').innerHTML=html;document.getElementById('modalBg').classList.add('show');}
-function closeModal(){document.getElementById('modalBg').classList.remove('show');}
+function closeModal(){
+  // Reset submit guards khi đóng modal (người dùng bấm X, click ngoài, hoặc code gọi)
+  if(typeof _submittingGoods!=='undefined') _submittingGoods=false;
+  if(typeof _savingOrder!=='undefined') _savingOrder=false;
+  document.getElementById('modalBg').classList.remove('show');
+}
 document.getElementById('modalBg').addEventListener('click',e=>{if(e.target.id==='modalBg')closeModal();});
 function readImage(input,cb){
   const f=input.files[0]; if(!f)return;
@@ -1221,8 +1226,11 @@ window.clearGdCust=()=>{
   document.getElementById('gd_cust_chosen').style.display='none';
   document.getElementById('gd_cust_search').value='';
 };
+let _submittingGoods=false;
 window.submitGoods=()=>{
+  if(_submittingGoods){toast('⏳ Đang xử lý, vui lòng chờ...');return;}
   if(!gdCart.length){toast('⚠️ Vui lòng thêm ít nhất 1 hàng hóa vào giỏ');return;}
+  _submittingGoods=true;
   const custMode=document.querySelector('input[name="gdCustMode"]:checked').value;
   let custName;
   if(custMode==='new'){
@@ -1256,6 +1264,7 @@ window.submitGoods=()=>{
   });
   gdCart=[];
   closeModal();
+  _submittingGoods=false;
   saveToFirebase(); toast('✅ Đã bán hàng cho '+custName);
   renderSection('phucvukh');
 };
@@ -1294,9 +1303,11 @@ function luongToiBody(my){
   const isHocVien = currentUser.role==='hocvien';
 
   // HH dịch vụ: từng bước của spaJob trong khoảng thời gian
+  // Dùng j.date (giống staffRow admin) và loại trừ job bị huỷ — để HH nhân viên khớp với admin
   const myJobs=state.spaJobs.filter(j=>{
-    const date=j.completedDate||j.date||'';
-    return date>=from && date<=to && Object.values(j.staff).includes(my.name);
+    if(j.cancelled) return false;
+    const date=j.date||'';
+    return date>=from && date<=to && Object.values(j.staff||{}).includes(my.name);
   });
   let svcCommission=0;
   const svcRows=[];
@@ -1728,13 +1739,17 @@ window.onOServiceInput=(val)=>{
   const svc=state.services.find(s=>s.name===val);
   if(svc) document.getElementById('o_price').value=svc.price;
 };
+let _savingOrder=false;
 window.saveOrder=()=>{
+  if(_savingOrder){toast('⏳ Đang xử lý...');return;}
+  _savingOrder=true;
   const id=Math.max(0,...state.orders.map(o=>o.id))+1;
   const service=document.getElementById('o_service').value;
   const price=+document.getElementById('o_price').value;
   state.orders.push({id,service,price,branch:document.getElementById('o_branch').value,customer:document.getElementById('o_cust').value,
     staff:document.getElementById('o_staff').value,date:document.getElementById('o_date').value,status:'Đang xử lý',
     type:'dichvu',refName:service,originalPrice:price,discountAmount:0,discountPercent:0});
+  _savingOrder=false;
   saveToFirebase(); closeModal(); toast('✅ Đã thêm đơn hàng'); renderSection('donhang');
 };
 window.editOrder=(id)=>{
@@ -3055,10 +3070,13 @@ function renderSection(id){
       if (d.branches)   state.branches   = d.branches;
       if (d.staff)      state.staff      = d.staff;
       if (d.services)   state.services   = d.services;
-      if (d.orders)     state.orders     = d.orders;
+      // Không overwrite state local nếu đang trong quá trình submit (tránh race condition)
+      if(!_submittingService && !_submittingGoods && !_savingOrder){
+        if (d.orders)   state.orders   = d.orders;
+        if (d.spaJobs)  state.spaJobs  = d.spaJobs;
+      }
       if (d.customers)  state.customers  = d.customers;
       if (d.pets)       state.pets       = d.pets;
-      if (d.spaJobs)    state.spaJobs    = d.spaJobs;
       if (d.hotelStays) state.hotelStays = d.hotelStays;
       if (d.expenses)   state.expenses   = d.expenses;
       if (d.warehouse)  state.warehouse  = d.warehouse;
