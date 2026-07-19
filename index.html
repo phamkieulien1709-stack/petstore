@@ -589,7 +589,7 @@ const RENDER={};
 /* ---- PHỤC VỤ KHÁCH HÀNG (hàng đợi lên đầu + modal thêm đơn mới) ---- */
 let wizPhoto='';
 RENDER.phucvukh = () => {
-  // Ca "chưa xong" = chưa có completedDate và chưa bị huỷ. Guard j.staff phòng dữ liệu cũ từ Firebase
+  // Ca "chưa xong" = chưa có completedDate, chưa bị huỷ, và chưa bị xóa (orderId=undefined bị filter riêng)
   const active = state.spaJobs.filter(j=>!j.completedDate && !j.cancelled).map(j=>({...j,staff:j.staff||{}}));
   const waiting = active.filter(j=>!j.staff[j.status]);
   const mine    = active.filter(j=>!waiting.includes(j) && j.staff[j.status]===currentUser.name);
@@ -1797,8 +1797,18 @@ window.saveEditOrder=(id)=>{
 };
 window.deleteOrder=(id)=>{
   if(!confirm('Xóa đơn hàng này? Các ca dịch vụ liên quan cũng sẽ bị xóa khỏi hàng đợi.')) return;
-  // Xóa spaJob liên quan (để không còn hiện ở Phục vụ KH và Quản lý spa)
+  // Xóa cứng spaJob có orderId khớp
   state.spaJobs=state.spaJobs.filter(j=>j.orderId!==id);
+  // Phòng trường hợp job được tạo không có orderId nhưng trùng service với đơn hàng:
+  // đánh dấu cancelled để không hiện ở kanban & hàng đợi
+  const deletedOrder=state.orders.find(o=>o.id===id);
+  if(deletedOrder){
+    state.spaJobs.forEach(j=>{
+      if(!j.orderId && j.service===deletedOrder.service && j.date===deletedOrder.date && !j.completedDate){
+        j.cancelled=true;
+      }
+    });
+  }
   state.orders=state.orders.filter(o=>o.id!==id);
   saveToFirebase(); toast('🗑️ Đã xóa đơn hàng và ca dịch vụ liên quan'); renderSection('donhang');
 };
@@ -2551,8 +2561,8 @@ RENDER.spa = () => {
   <div class="toolbar"><div class="small muted">Cập nhật trạng thái, nhân viên phụ trách từng khâu, và ảnh trước/sau để đối chiếu.</div>
   <button class="btn primary" onclick="openAddSpaJob()">+ Thêm ca spa</button></div>
   <div class="kanban">
-    ${stages.map(st=>`<div class="kcol"><h4>${st} <span class="mono">${state.spaJobs.filter(j=>j.status===st).length}</span></h4>
-      ${state.spaJobs.filter(j=>j.status===st).map(spaCard).join('')}
+    ${stages.map(st=>`<div class="kcol"><h4>${st} <span class="mono">${state.spaJobs.filter(j=>j.status===st&&!j.cancelled).length}</span></h4>
+      ${state.spaJobs.filter(j=>j.status===st&&!j.cancelled).map(spaCard).join('')}
     </div>`).join('')}
   </div>`;
 };
@@ -2643,7 +2653,7 @@ window.saveSpaJob=()=>{
   const sj_firstStage=(sj_svc&&sj_svc.commissionSteps&&sj_svc.commissionSteps[0])?sj_svc.commissionSteps[0].stage:'Chờ';
   const sj_staffMap={}; (sj_svc&&sj_svc.commissionSteps||[{stage:'Chờ'}]).forEach(st=>{ sj_staffMap[st.stage]=''; });
   state.spaJobs.push({id,petId:+document.getElementById('sj_pet').value,service:sj_svcName,status:sj_firstStage,price:sj_svc?sj_svc.price:0,
-    staff:sj_staffMap,before:'',after:''});
+    staff:sj_staffMap,before:'',after:'',date:TODAY,orderId:null,completedDate:null,cancelled:false,branch:''});
   saveToFirebase(); closeModal(); toast('✅ Đã tạo ca spa mới'); renderSection('spa');
 };
 
